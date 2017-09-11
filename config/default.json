@@ -1,0 +1,17 @@
+{
+     "logger": {
+        "name": "layer-DEV",
+        "level": "debug",
+        "toFile": false,
+        "dirLogFile": null
+    },
+    "service": {
+        "name": "Layer",
+        "port": 6000
+    },
+    "mongodb":{
+        "database": "layer_db",
+        "host": "mymachine",
+        "port": 27017
+    }
+}
