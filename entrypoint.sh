@@ -8,7 +8,6 @@ case "$1" in
         ;;
     test)
         echo "Running Test"
-        exec npm test
         ;;
     start)
         echo "Running Start"
