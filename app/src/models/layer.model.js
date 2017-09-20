@@ -15,7 +15,7 @@ const Layer = new Schema({
     iso: [
         { type: String, required: false, trim: true }
     ],
-    provider: { type: String, required: true, trim: true },
+    provider: { type: String, required: false, trim: true },
     type: { type: String, required: false, trim: true },
     userId: { type: String, required: true, trim: true },
     default: { type: Boolean, required: false, default: false },

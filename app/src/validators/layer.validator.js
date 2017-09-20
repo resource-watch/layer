@@ -98,11 +98,11 @@ class LayerValidator {
         koaObj.checkBody('description').optional().check(description => LayerValidator.isString(description), 'must be a string');
         koaObj.checkBody('iso').optional().check(iso => LayerValidator.isArray(iso), 'must be an array');
         // connectorType
-        koaObj.checkBody('provider').notEmpty()
+        koaObj.checkBody('provider').optional()
         .toLow()
         .check(provider => LayerValidator.isString(provider), 'must be a string');
         // provider
-        koaObj.checkBody('type').notEmpty()
+        koaObj.checkBody('type').optional()
         .toLow()
         .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
         // connectorUrl

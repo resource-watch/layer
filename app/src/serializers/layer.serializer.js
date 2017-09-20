@@ -13,7 +13,6 @@ class LayerSerializer {
                 application: el.application,
                 iso: el.iso,
                 provider: el.provider,
-                type: el.type,
                 userId: el.userId,
                 default: el.default,
                 env: el.env,
