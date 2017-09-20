@@ -128,7 +128,7 @@ class LayerRouter {
             resource.ids = resource.ids.split(',').map((elem) => elem.trim());
         }
         const result = await LayerService.getByDataset(resource);
-        ctx.body = LayerSerializer.serialize(result);
+        ctx.body = LayerSerializer.serialize(result, null, true);
     }
 
     static async updateEnvironment(ctx) {

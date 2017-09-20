@@ -26,14 +26,14 @@ class LayerSerializer {
         };
     }
 
-    static serialize(data, link = null) {
+    static serialize(data, link = null, forceArray = false) {
         const result = {};
         if (data) {
             if (data.docs) {
                 result.data = data.docs.map(el => LayerSerializer.serializeElement(el));
             } else {
                 if (Array.isArray(data)) {
-                    if (data.length === 1) {
+                    if (data.length === 1 && !forceArray) {
                         result.data = LayerSerializer.serializeElement(data[0]);
                     } else {
                         result.data = data.map(el => LayerSerializer.serializeElement(el));
