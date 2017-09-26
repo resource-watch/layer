@@ -128,13 +128,13 @@ class LayerService {
         }).save();
         logger.debug('[LayerService]: Creating in graph');
         if (stage !== 'staging') {
-            // try {
-            //     await GraphService.createLayer(dataset, newLayer._id);
-            // } catch (err) {
-            //     logger.error('Error creating widget in graph. Removing widget');
-            //     await newLayer.remove();
-            //     throw new Error(err);
-            // }
+            try {
+                await GraphService.createLayer(dataset, newLayer._id);
+            } catch (err) {
+                logger.error('Error creating widget in graph. Removing widget');
+                await newLayer.remove();
+                throw new Error(err);
+            }
         }
         return newLayer;
     }
