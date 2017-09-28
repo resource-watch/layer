@@ -156,7 +156,7 @@ class LayerService {
         currentLayer.provider = layer.provider || currentLayer.provider;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.provider = layer.provider || currentLayer.provider;
-        currentLayer.default = layer.default || currentLayer.default;
+        currentLayer.default = layer.default ? layer.default !== undefined : currentLayer.default;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.layerConfig = layer.layerConfig || currentLayer.layerConfig;
         currentLayer.legendConfig = layer.legendConfig || currentLayer.legendConfig;
