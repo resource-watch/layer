@@ -4,6 +4,8 @@ const GraphService = require('services/graph.service');
 const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const slug = require('slug');
+const stage = process.env.NODE_ENV;
+
 
 class LayerService {
 
@@ -125,12 +127,14 @@ class LayerService {
             staticImageConfig: layer.staticImageConfig
         }).save();
         logger.debug('[LayerService]: Creating in graph');
-        try {
-            await GraphService.createLayer(dataset, newLayer._id);
-        } catch (err) {
-            logger.error('Error creating widget in graph. Removing widget');
-            await newLayer.remove();
-            throw new Error(err);
+        if (stage !== 'staging') {
+            try {
+                await GraphService.createLayer(dataset, newLayer._id);
+            } catch (err) {
+                logger.error('Error creating widget in graph. Removing widget');
+                await newLayer.remove();
+                throw new Error(err);
+            }
         }
         return newLayer;
     }
@@ -152,7 +156,7 @@ class LayerService {
         currentLayer.provider = layer.provider || currentLayer.provider;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.provider = layer.provider || currentLayer.provider;
-        currentLayer.default = layer.default || currentLayer.default;
+        currentLayer.default = layer.default ? layer.default !== undefined : currentLayer.default;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.layerConfig = layer.layerConfig || currentLayer.layerConfig;
         currentLayer.legendConfig = layer.legendConfig || currentLayer.legendConfig;
@@ -183,10 +187,12 @@ class LayerService {
         logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
         const deletedLayer = await currentLayer.remove();
         logger.debug('[LayerService]: Deleting in graph');
-        try {
-            await GraphService.deleteLayer(id);
-        } catch (err) {
-            logger.error('Error removing layer of the graph', err);
+        if (stage !== 'staging') {
+            try {
+                await GraphService.deleteLayer(id);
+            } catch (err) {
+                logger.error('Error removing layer of the graph', err);
+            }
         }
         return deletedLayer;
     }
