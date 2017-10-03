@@ -4,6 +4,7 @@ const GraphService = require('services/graph.service');
 const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const slug = require('slug');
+const ctRegisterMicroservice = require('ct-register-microservice-node');
 const stage = process.env.NODE_ENV;
 
 
@@ -166,6 +167,12 @@ class LayerService {
         currentLayer.updatedAt = new Date();
         logger.info(`[DBACCESS-SAVE]: layer`);
         const newLayer = await currentLayer.save();
+
+        try {
+            await LayerService.expireCacheTiles(id, currentLayer._id);
+        } catch (err) {
+            logger.error('Error removing metadata of the layer', err);
+        }
         return newLayer;
     }
 
@@ -194,7 +201,64 @@ class LayerService {
                 logger.error('Error removing layer of the graph', err);
             }
         }
+        try {
+            await LayerService.expireCacheTiles(id, currentLayer._id);
+        } catch (err) {
+            logger.error('Error expirating cache', err);
+        }
+        try {
+            await LayerService.deleteMedadata(id, currentLayer._id);
+        } catch (err) {
+            logger.error('Error removing metadata of the layer', err);
+        }
         return deletedLayer;
+    }
+
+    static async deleteByDataset(id) {
+        logger.debug(`[LayerService]: Getting layers of dataset with id:  ${id}`);
+        logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
+        const layers = await Layer.find({
+            dataset: id
+        }).exec();
+        if (layers) {
+            for (let i = 0, length = layers.length; i < length; i++) {
+                const currentLayer = layers[i];
+                logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
+                await currentLayer.remove();
+                logger.debug('[LayerService]: Deleting in graph');
+                try {
+                    await GraphService.deleteLayer(id);
+                } catch (err) {
+                    logger.error('Error removing layer of the graph', err);
+                }
+                try {
+                    await LayerService.deleteMedadata(id, currentLayer._id);
+                } catch (err) {
+                    logger.error('Error removing metadata of the layer', err);
+                }
+                try {
+                    await LayerService.expireCacheTiles(id, currentLayer._id);
+                } catch (err) {
+                    logger.error('Error expirating cache', err);
+                }
+            }
+        }
+    }
+
+    static async expireCacheTiles(layerId) {
+        logger.debug('Expirating cache of tiles');
+        await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/layer/${layerId}/expire-cache`,
+            method: 'DELETE'
+        });
+    }
+
+    static async deleteMedadata(datasetId, layerId) {
+        logger.debug('Removing metadata of the layer');
+        await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
+            method: 'DELETE'
+        });
     }
 
     static async getAll(query = {}, dataset = null) {
