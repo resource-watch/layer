@@ -95,6 +95,22 @@ class LayerRouter {
         }
     }
 
+    static async deleteByDataset(ctx) {
+        const id = ctx.params.dataset;
+        logger.info(`[LayerRouter] Deleting layers of dataset with id: ${id}`);
+        try {
+            const layer = await LayerService.deleteByDataset(id);
+            ctx.set('cache-control', 'flush');
+            ctx.body = LayerSerializer.serialize(layer);
+        } catch (err) {
+            if (err instanceof LayerNotFound) {
+                ctx.throw(404, err.message);
+                return;
+            }
+            throw err;
+        }
+    }
+
     static async getAll(ctx) {
         logger.info(`[LayerRouter] Getting all layers`);
         const query = ctx.query;
@@ -178,6 +194,16 @@ const datasetValidationMiddleware = async(ctx, next) => {
     await next();
 };
 
+const isMicroserviceMiddleware = async(ctx, next) => {
+    logger.debug('Checking if is a microservice');
+    const user = LayerRouter.getUser(ctx);
+    if (!user || user.id !== 'microservice') {
+        ctx.throw(401, 'Not authorized');
+        return;
+    }
+    await next();
+};
+
 const authorizationMiddleware = async (ctx, next) => {
     logger.info(`[LayerRouter] Checking authorization`);
     // Get user from query (delete) or body (post-patch)
@@ -239,6 +265,7 @@ router.post('/dataset/:dataset/layer', datasetValidationMiddleware, validationMi
 router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerRouter.get);
 router.patch('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
 router.delete('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
+router.delete('/dataset/:dataset/layer', isMicroserviceMiddleware, LayerRouter.deleteByDataset);
 
 router.post('/layer/find-by-ids', LayerRouter.getByIds);
 router.patch('/layer/change-environment/:dataset/:env', isMicroservice, LayerRouter.updateEnvironment);

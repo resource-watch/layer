@@ -54,6 +54,14 @@
 			"path": "/api/v1/dataset/:dataset/layer/:layer"
 		}
 	},{
+		"path": "/v1/dataset/:dataset/layer",
+		"method": "DELETE",
+		"authenticated": true,
+		"redirect": {
+			"method": "DELETE",
+			"path": "/api/v1/dataset/:dataset/layer"
+		}
+	},{
 		"path": "/v1/layer/find-by-ids",
 		"method": "POST",
 		"authenticated": true,
