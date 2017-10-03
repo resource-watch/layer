@@ -221,11 +221,25 @@ class LayerService {
 
     static async getByDataset(resource) {
         logger.debug(`[LayerService] Getting layers for datasets with ids ${resource.ids}`);
+        if (resource.app) {
+            if (resource.app.indexOf('@') >= 0) {
+                resource.app = {
+                    $all: resource.app.split('@').map(elem => elem.trim())
+                };
+            } else {
+                resource.app = {
+                    $in: resource.app.split(',').map(elem => elem.trim())
+                };
+            }
+        }
         const query = {
             dataset: {
                 $in: resource.ids
             }
         };
+        if (resource.app) {
+            query.application = resource.app;
+        }
         logger.debug(`[LayerService] IDs query: ${JSON.stringify(query)}`);
         return await Layer.find(query).exec();
     }
