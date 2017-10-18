@@ -60,7 +60,13 @@ const onDbReady = (err) => {
             if (ctx.method === 'GET' || ctx.method === 'HEAD') {
                 ctx.set('Surrogate-Key', 'layer');
             } else {
-                fastlyPurge.key(process.env.FASTLY_SERVICE_ID, 'layer');
+                fastlyPurge.key(process.env.FASTLY_SERVICE_ID, 'layer', (err, result) => {
+                    if (err) {
+                        logger.error('Error fastly', err);
+                    } else {
+                        logger.info('Fastly: ', result);
+                    }
+                });
             }
         }
     });
