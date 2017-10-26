@@ -29,10 +29,11 @@ class LayerRouter {
     static async get(ctx) {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Getting layer with id: ${id}`);
+        const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
         const query = ctx.query;
         delete query.loggedUser;
         try {
-            const layer = await LayerService.get(id);
+            const layer = await LayerService.get(id, includes);
             ctx.body = LayerSerializer.serialize(layer);
         } catch (err) {
             if (err instanceof LayerNotFound) {
