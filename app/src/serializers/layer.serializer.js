@@ -21,7 +21,8 @@ class LayerSerializer {
                 interactionConfig: el.interactionConfig || {},
                 applicationConfig: el.applicationConfig || {},
                 staticImageConfig: el.staticImageConfig || {},
-                updatedAt: el.updatedAt
+                updatedAt: el.updatedAt,
+                user: el.user
             }
         };
     }

@@ -4,6 +4,7 @@ const GraphService = require('services/graph.service');
 const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const slug = require('slug');
+const RelationshipsService = require('services/relationships.service');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
 const stage = process.env.NODE_ENV;
 
@@ -89,7 +90,7 @@ class LayerService {
         return filteredSort;
     }
 
-    static async get(id) {
+    static async get(id, includes) {
         logger.debug(`[LayerService]: Getting layer with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
         const layer = await Layer.findById(id).exec() || await Layer.findOne({
@@ -98,6 +99,11 @@ class LayerService {
         if (!layer) {
             logger.error(`[LayerService]: Layer with id ${id} doesn't exist`);
             throw new LayerNotFound(`Layer with id '${id}' doesn't exist`);
+        }
+        if (includes.length > 0) {
+            logger.debug('Finding relationships');
+            const layers = await RelationshipsService.getRelationships([layer], includes);
+            return layers[0];
         }
         return layer;
     }
@@ -272,6 +278,7 @@ class LayerService {
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
         const ids = query.ids ? query.ids.split(',').map(elem => elem.trim()) : [];
+        const includes = query.includes ? query.includes.split(',').map(elem => elem.trim()) : [];
         if (dataset) {
             query.dataset = dataset;
         }
@@ -285,6 +292,10 @@ class LayerService {
         logger.info(`[DBACCESS-FIND]: layer`);
         let pages = await Layer.paginate(filteredQuery, options);
         pages = Object.assign({}, pages);
+        if (includes.length > 0) {
+            logger.debug('Finding relationships');
+            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes);
+        }
         return pages;
     }
 
