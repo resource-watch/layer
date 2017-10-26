@@ -55,13 +55,18 @@ class LayerService {
                     query[param] = query[param];
 
                 }
-            }
-            if (ids.length > 0) {
-                query._id = {
-                    $in: ids
+            } else if (param === 'env') {
+                query[param] = {
+                    $in: query[param].split(',')
                 };
             }
+            
         });
+        if (ids.length > 0) {
+            query._id = {
+                $in: ids
+            };
+        }
         logger.info(query);
         return query;
     }

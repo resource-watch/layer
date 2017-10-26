@@ -8,6 +8,9 @@ const ctRegisterMicroservice = require('ct-register-microservice-node');
 const ErrorSerializer = require('serializers/error.serializer');
 const mongoUri = process.env.MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 const koaValidate = require('koa-validate');
+const FastlyPurge = require('fastly-purge');
+
+const fastlyPurge = new FastlyPurge(process.env.FASTLY_TOKEN);
 
 const koaBody = require('koa-body')({
     multipart: true,
@@ -50,6 +53,23 @@ const onDbReady = (err) => {
     const app = new Koa();
 
     app.use(koaBody);
+
+    app.use(async (ctx, next) => {
+        await next();
+        if (ctx.status === 200) {
+            if (ctx.method === 'GET' || ctx.method === 'HEAD') {
+                ctx.set('Surrogate-Key', 'layer');
+            } else {
+                fastlyPurge.key(process.env.FASTLY_SERVICE_ID, 'layer', (err, result) => {
+                    if (err) {
+                        logger.error('Error fastly', err);
+                    } else {
+                        logger.info('Fastly: ', result);
+                    }
+                });
+            }
+        }
+    });
 
     app.use(async (ctx, next) => {
         try {
