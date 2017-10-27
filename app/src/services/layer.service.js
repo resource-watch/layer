@@ -100,7 +100,7 @@ class LayerService {
             logger.error(`[LayerService]: Layer with id ${id} doesn't exist`);
             throw new LayerNotFound(`Layer with id '${id}' doesn't exist`);
         }
-        if (includes.length > 0) {
+        if (includes && includes.length > 0) {
             logger.debug('Finding relationships');
             const layers = await RelationshipsService.getRelationships([layer], includes);
             return layers[0];
