@@ -15,6 +15,7 @@ class LayerSerializer {
                 provider: el.provider,
                 userId: el.userId,
                 default: el.default,
+                protected: el.protected,
                 env: el.env,
                 layerConfig: el.layerConfig || {},
                 legendConfig: el.legendConfig || {},

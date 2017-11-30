@@ -6,6 +6,7 @@ const LayerValidator = require('validators/layer.validator');
 const LayerSerializer = require('serializers/layer.serializer');
 const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
+const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
 const USER_ROLES = require('app.constants').USER_ROLES;
 
@@ -90,6 +91,10 @@ class LayerRouter {
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
+                return;
+            }
+            if (err instanceof LayerProtected) {
+                ctx.throw(400, err.message);
                 return;
             }
             throw err;
