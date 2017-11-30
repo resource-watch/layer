@@ -3,6 +3,7 @@ const Layer = require('models/layer.model');
 const GraphService = require('services/graph.service');
 const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
+const LayerProtected = require('errors/layerProtected.error');
 const slug = require('slug');
 const RelationshipsService = require('services/relationships.service');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
@@ -130,6 +131,7 @@ class LayerService {
             iso: layer.iso,
             provider: layer.provider,
             default: layer.default,
+            protected: layer.protected,
             userId: user.id,
             env: layer.env || 'production',
             layerConfig: layer.layerConfig,
@@ -176,6 +178,9 @@ class LayerService {
         currentLayer.applicationConfig = layer.applicationConfig || currentLayer.applicationConfig;
         currentLayer.staticImageConfig = layer.staticImageConfig || currentLayer.staticImageConfig;
         currentLayer.updatedAt = new Date();
+        if (layer.protected === false || layer.protected === true) {
+            currentLayer.protected = layer.protected;
+        }
         logger.info(`[DBACCESS-SAVE]: layer`);
         const newLayer = await currentLayer.save();
 
@@ -201,6 +206,10 @@ class LayerService {
         if (!currentLayer) {
             logger.error(`[LayerService]: Layer with id ${id} doesn't exist`);
             throw new LayerNotFound(`Layer with id '${id}' doesn't exist`);
+        }
+        if (currentLayer.protected) {
+            logger.error(`[LayerService]: Layer with id ${id} is protected`);
+            throw new LayerProtected(`Layer is protected`);
         }
         logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
         const deletedLayer = await currentLayer.remove();
