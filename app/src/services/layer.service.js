@@ -12,8 +12,23 @@ const stage = process.env.NODE_ENV;
 
 class LayerService {
 
-    static getSlug(name) {
-        return slug(name);
+    static async getSlug(name) {
+        let valid = false;
+        let slugTemp = null;
+        let i = 0;
+        while (!valid) {
+            slugTemp = slug(name);
+            if (i > 0) {
+                slugTemp += `_${i}`;
+            }
+            const currentDataset = await Layer.findOne({
+                slug: slugTemp
+            }).exec();
+            if (!currentDataset) {
+                return slugTemp;
+            }
+            i++;
+        }
     }
 
     static getFilteredQuery(query, ids = []) {
@@ -112,14 +127,8 @@ class LayerService {
     static async create(layer, dataset, user) {
         logger.debug(`[LayerService]: Getting layer with name:  ${layer.name}`);
         logger.info(`[DBACCES-FIND]: layer.name: ${layer.name}`);
-        const tempSlug = LayerService.getSlug(layer.name);
-        const currentLayer = await Layer.findOne({
-            slug: tempSlug
-        }).exec();
-        if (currentLayer) {
-            logger.error(`[LayerService]: Layer with name ${layer.name} generates an existing layer slug ${tempSlug}`);
-            throw new LayerDuplicated(`Layer with name '${layer.name}' generates an existing layer slug '${tempSlug}'`);
-        }
+        const tempSlug = await LayerService.getSlug(layer.name);
+        
         logger.info(`[DBACCESS-SAVE]: layer.name: ${layer.name}`);
         const newLayer = await new Layer({
             name: layer.name,
@@ -143,7 +152,7 @@ class LayerService {
         logger.debug('[LayerService]: Creating in graph');
         if (stage !== 'staging') {
             try {
-                await GraphService.createLayer(dataset, newLayer._id);
+                // await GraphService.createLayer(dataset, newLayer._id);
             } catch (err) {
                 logger.error('Error creating widget in graph. Removing widget');
                 await newLayer.remove();
