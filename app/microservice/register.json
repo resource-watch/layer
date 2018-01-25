@@ -1,6 +1,8 @@
 {
-	"name": "#(service.name)",
+	"name": "Layer Microservice",
 	"tags": ["layer"],
+	"cache": ["layer"],
+	"uncache": ["layer", "dataset"],
 	"endpoints": [{
 		"path": "/v1/layer",
 		"method": "GET",
