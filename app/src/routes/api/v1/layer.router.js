@@ -2,6 +2,7 @@ const Router = require('koa-router');
 const logger = require('logger');
 const LayerService = require('services/layer.service');
 const DatasetService = require('services/dataset.service');
+const RelationshipsService = require('services/relationships.service');
 const LayerValidator = require('validators/layer.validator');
 const LayerSerializer = require('serializers/layer.serializer');
 const LayerDuplicated = require('errors/layerDuplicated.error');
@@ -121,7 +122,22 @@ class LayerRouter {
         logger.info(`[LayerRouter] Getting all layers`);
         const query = ctx.query;
         const dataset = ctx.params.dataset || null;
+        const userId = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser).id : null;
         delete query.loggedUser;
+        if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
+            if (!userId) {
+                ctx.throw(403, 'Collection filter not authorized');
+                return;
+            }
+            logger.debug('Obtaining collections', userId);
+            if (userId) {
+                ctx.query.ids = await RelationshipsService.getCollections(ctx.query.collection, userId);
+                ctx.query.ids = ctx.query.ids.join(',');
+            } else {
+                ctx.query.ids = '';
+            }
+            logger.debug('Ids from collections', ctx.query.ids);
+        }
         // Links creation
         const clonedQuery = Object.assign({}, query);
         delete clonedQuery['page[size]'];
