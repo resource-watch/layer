@@ -77,7 +77,7 @@ class LayerService {
                     $in: query[param].split(',')
                 };
             }
-            
+
         });
         if (ids.length > 0) {
             query._id = {
@@ -128,7 +128,7 @@ class LayerService {
         logger.debug(`[LayerService]: Getting layer with name:  ${layer.name}`);
         logger.info(`[DBACCES-FIND]: layer.name: ${layer.name}`);
         const tempSlug = await LayerService.getSlug(layer.name);
-        
+
         logger.info(`[DBACCESS-SAVE]: layer.name: ${layer.name}`);
         const newLayer = await new Layer({
             name: layer.name,
@@ -152,7 +152,7 @@ class LayerService {
         logger.debug('[LayerService]: Creating in graph');
         if (stage !== 'staging') {
             try {
-                // await GraphService.createLayer(dataset, newLayer._id);
+                await GraphService.createLayer(dataset, newLayer._id);
             } catch (err) {
                 logger.error('Error creating widget in graph. Removing widget');
                 await newLayer.remove();
