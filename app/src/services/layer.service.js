@@ -32,6 +32,7 @@ class LayerService {
     }
 
     static getFilteredQuery(query, ids = []) {
+        const collection = query.collection;
         if (!query.application && query.app) {
             query.application = query.app;
         }
@@ -79,7 +80,7 @@ class LayerService {
             }
 
         });
-        if (ids.length > 0) {
+        if (ids.length > 0 || collection) {
             query._id = {
                 $in: ids
             };
