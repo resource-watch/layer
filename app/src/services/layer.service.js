@@ -33,10 +33,10 @@ class LayerService {
 
     static getFilteredQuery(query, ids = []) {
         const collection = query.collection;
-        const favorite = query.favorite;
+        const favourite = query.favourite;
         if (!query.application && query.app) {
             query.application = query.app;
-            if (favorite) {
+            if (favourite) {
                 delete query.application;
             }
         }
@@ -84,7 +84,7 @@ class LayerService {
             }
 
         });
-        if (ids.length > 0 || collection || favorite) {
+        if (ids.length > 0 || collection || favourite) {
             query._id = {
                 $in: ids
             };
