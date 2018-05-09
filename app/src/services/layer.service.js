@@ -40,8 +40,11 @@ class LayerService {
                 delete query.application;
             }
         }
-        if (!query.env) {
+        if (!query.env) { // default value
             query.env = 'production';
+        }
+        if (!query.published) { // default value
+            query.published = true;
         }
         const layerAttributes = Object.keys(Layer.schema.paths);
         Object.keys(query).forEach((param) => {
@@ -145,6 +148,7 @@ class LayerService {
             iso: layer.iso,
             provider: layer.provider,
             default: layer.default,
+            published: layer.published,
             protected: layer.protected,
             userId: user.id,
             env: layer.env || 'production',
@@ -185,6 +189,7 @@ class LayerService {
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.provider = layer.provider || currentLayer.provider;
         currentLayer.default = layer.default !== undefined ? layer.default : currentLayer.default;
+        currentLayer.published = layer.published !== undefined ? layer.published : currentLayer.published;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.layerConfig = layer.layerConfig || currentLayer.layerConfig;
         currentLayer.legendConfig = layer.legendConfig || currentLayer.legendConfig;

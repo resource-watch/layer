@@ -20,6 +20,7 @@ const Layer = new Schema({
     userId: { type: String, required: true, trim: true },
     default: { type: Boolean, required: false, default: false },
     protected: { type: Boolean, required: false, default: false },
+    published: { type: Boolean, required: false, default: true },
     env: { type: String, required: true, default: 'production', trim: true },
     layerConfig: { type: Schema.Types.Mixed },
     legendConfig: { type: Schema.Types.Mixed },

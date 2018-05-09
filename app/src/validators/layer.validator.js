@@ -105,8 +105,13 @@ class LayerValidator {
         koaObj.checkBody('type').optional()
         .toLow()
         .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+        // env
+        koaObj.checkBody('env').optional()
+        .toLow()
+        .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
+        koaObj.checkBody('published').optional().toBoolean();
         koaObj.checkBody('layerConfig').optional().check(layerConfig => LayerValidator.isObject(layerConfig), 'must be an object');
         koaObj.checkBody('legendConfig').optional().check(legendConfig => LayerValidator.isObject(legendConfig), 'must be an object');
         koaObj.checkBody('interactionConfig').optional().check(interactionConfig => LayerValidator.isObject(interactionConfig), 'must be an object');
@@ -133,8 +138,13 @@ class LayerValidator {
         koaObj.checkBody('type').optional()
         .toLow()
         .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+        // env
+        koaObj.checkBody('env').optional()
+        .toLow()
+        .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
+        koaObj.checkBody('published').optional().toBoolean();
         koaObj.checkBody('layerConfig').optional().check(layerConfig => LayerValidator.isObject(layerConfig), 'must be an object');
         koaObj.checkBody('legendConfig').optional().check(legendConfig => LayerValidator.isObject(legendConfig), 'must be an object');
         koaObj.checkBody('interactionConfig').optional().check(interactionConfig => LayerValidator.isObject(interactionConfig), 'must be an object');
