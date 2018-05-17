@@ -63,8 +63,8 @@ class LayerRouter {
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
 
-            ctx.set('uncache', ['layer', `${layer.dataset}-layer`, `${ctx.state.dataset.slug}-layer`]);
-            
+            ctx.set('uncache', ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`]);
+
         } catch (err) {
             if (err instanceof LayerDuplicated) {
                 ctx.throw(400, err.message);
@@ -81,7 +81,7 @@ class LayerRouter {
             const layer = await LayerService.update(id, ctx.request.body);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
-            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.slug}-layer`]);
+            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`]);
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -101,7 +101,7 @@ class LayerRouter {
             const layer = await LayerService.delete(id);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
-            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.slug}-layer`]);
+            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`]);
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -122,7 +122,7 @@ class LayerRouter {
             const layers= await LayerService.deleteByDataset(id);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
-            const uncache = ['layer', `${layer.dataset}-layer`, `${ctx.state.dataset.slug}-layer`];
+            const uncache = ['layer', `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`];
             if (layers) {
                 layers.forEach(layer => {
                     uncache.push(layer._id);
@@ -175,7 +175,7 @@ class LayerRouter {
         const link = `${ctx.request.protocol}://${ctx.request.host}/${apiVersion}${ctx.request.path}${serializedQuery}`;
         const layers = await LayerService.getAll(query, dataset);
         ctx.body = LayerSerializer.serialize(layers, link);
-        
+
         const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
         const cache = ['layer'];
         if (includes) {
@@ -209,7 +209,7 @@ class LayerRouter {
     static async updateEnvironment(ctx) {
         logger.info('Updating enviroment of all layers with dataset ', ctx.params.dataset, ' to environment', ctx.params.env);
         const layers = await LayerService.updateEnvironment(ctx.params.dataset, ctx.params.env);
-        const uncache = ['layer',  `${ctx.params.dataset}-layer`,  `${ctx.state.dataset.slug}-layer`, 'dataset-layer'];
+        const uncache = ['layer',  `${ctx.params.dataset}-layer`,  `${ctx.state.dataset.attributes.slug}-layer`, 'dataset-layer'];
         if (layers) {
             layers.forEach(layer => {
                 uncache.push(layer._id);
@@ -217,7 +217,7 @@ class LayerRouter {
             });
         }
         ctx.set('uncache', uncache.join(' '))
-        ctx.body = '';
+        ctx.body = '';s
     }
 
 }
