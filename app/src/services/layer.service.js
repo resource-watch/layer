@@ -213,7 +213,11 @@ class LayerService {
 
     static async updateEnvironment(dataset, env) {
         logger.debug('Updating layers with dataset', dataset);
+        const layers = await Layer.find({
+            dataset
+        }).exec();
         await Layer.update({ dataset }, { $set: { env } }, { multi: true });
+        return layers;
     }
 
     static async delete(id) {
@@ -282,6 +286,7 @@ class LayerService {
                 }
             }
         }
+        return layers;
     }
 
     static async expireCacheTiles(layerId) {
