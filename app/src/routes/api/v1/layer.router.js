@@ -121,15 +121,15 @@ class LayerRouter {
         try {
             const layers= await LayerService.deleteByDataset(id);
             ctx.set('cache-control', 'flush');
-            ctx.body = LayerSerializer.serialize(layer);
-            const uncache = ['layer', `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`];
+            ctx.body = LayerSerializer.serialize(layers);
+            const uncache = ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`];
             if (layers) {
                 layers.forEach(layer => {
                     uncache.push(layer._id);
                     uncache.push(layer.slug);
                 });
             }
-            ctx.set('uncache', layers.join(' '));
+            ctx.set('uncache', uncache.join(' '));
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
