@@ -37,6 +37,14 @@ class LayerRouter {
         try {
             const layer = await LayerService.get(id, includes);
             ctx.body = LayerSerializer.serialize(layer);
+            const cache = [id, layer.slug];
+            if (includes) {
+                includes.forEach(inc => {
+                    cache.push(`${id}-${inc}`);
+                    cache.push(`${layer.slug}-${inc}`);
+                })
+            }
+            ctx.set('cache', cache.join(' '));
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -54,6 +62,9 @@ class LayerRouter {
             const layer = await LayerService.create(ctx.request.body, dataset, user);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
+
+            ctx.set('uncache', ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
+
         } catch (err) {
             if (err instanceof LayerDuplicated) {
                 ctx.throw(400, err.message);
@@ -70,6 +81,7 @@ class LayerRouter {
             const layer = await LayerService.update(id, ctx.request.body);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
+            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -89,6 +101,7 @@ class LayerRouter {
             const layer = await LayerService.delete(id);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
+            ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -106,9 +119,17 @@ class LayerRouter {
         const id = ctx.params.dataset;
         logger.info(`[LayerRouter] Deleting layers of dataset with id: ${id}`);
         try {
-            const layer = await LayerService.deleteByDataset(id);
+            const layers= await LayerService.deleteByDataset(id);
             ctx.set('cache-control', 'flush');
-            ctx.body = LayerSerializer.serialize(layer);
+            ctx.body = LayerSerializer.serialize(layers);
+            const uncache = ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`];
+            if (layers) {
+                layers.forEach(layer => {
+                    uncache.push(layer._id);
+                    uncache.push(layer.slug);
+                });
+            }
+            ctx.set('uncache', uncache.join(' '));
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -154,6 +175,21 @@ class LayerRouter {
         const link = `${ctx.request.protocol}://${ctx.request.host}/${apiVersion}${ctx.request.path}${serializedQuery}`;
         const layers = await LayerService.getAll(query, dataset);
         ctx.body = LayerSerializer.serialize(layers, link);
+
+        const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
+        const cache = ['layer'];
+        if (ctx.params.dataset) {
+            cache.push(`${ctx.params.dataset}-layer-all`);
+        }
+        if (includes) {
+            includes.forEach(inc => {
+                cache.push(`layer-${inc}`);
+                if (ctx.params.dataset) {
+                    cache.push(`${ctx.params.dataset}-layer-all-${inc}`);
+                }
+            });
+        }
+        ctx.set('cache', cache.join(' '));
     }
 
     static async getByIds(ctx) {
@@ -178,8 +214,16 @@ class LayerRouter {
 
     static async updateEnvironment(ctx) {
         logger.info('Updating enviroment of all layers with dataset ', ctx.params.dataset, ' to environment', ctx.params.env);
-        await LayerService.updateEnvironment(ctx.params.dataset, ctx.params.env);
-        ctx.body = '';
+        const layers = await LayerService.updateEnvironment(ctx.params.dataset, ctx.params.env);
+        const uncache = ['layer',  `${ctx.params.dataset}-layer`,  `${ctx.state.dataset.attributes.slug}-layer`, 'dataset-layer'];
+        if (layers) {
+            layers.forEach(layer => {
+                uncache.push(layer._id);
+                uncache.push(layer.slug);
+            });
+        }
+        ctx.set('uncache', uncache.join(' '))
+        ctx.body = '';s
     }
 
 }
@@ -293,9 +337,9 @@ router.post('/dataset/:dataset/layer', datasetValidationMiddleware, validationMi
 router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerRouter.get);
 router.patch('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
 router.delete('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
-router.delete('/dataset/:dataset/layer', isMicroserviceMiddleware, LayerRouter.deleteByDataset);
+router.delete('/dataset/:dataset/layer', datasetValidationMiddleware, isMicroserviceMiddleware, LayerRouter.deleteByDataset);
 
 router.post('/layer/find-by-ids', LayerRouter.getByIds);
-router.patch('/layer/change-environment/:dataset/:env', isMicroservice, LayerRouter.updateEnvironment);
+router.patch('/layer/change-environment/:dataset/:env', datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
 
 module.exports = router;
