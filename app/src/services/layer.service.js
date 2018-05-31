@@ -43,9 +43,9 @@ class LayerService {
         if (!query.env) { // default value
             query.env = 'production';
         }
-        if (!query.published) { // default value
-            query.published = true;
-        }
+        // if (!query.published) { // default value
+        //     query.published = true;
+        // }
         const layerAttributes = Object.keys(Layer.schema.paths);
         Object.keys(query).forEach((param) => {
             if (layerAttributes.indexOf(param) < 0) {
