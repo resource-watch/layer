@@ -13,7 +13,7 @@ const USER_ROLES = require('app.constants').USER_ROLES;
 
 const router = new Router({});
 
-const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
+const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
     return a;
 }, []).join('&');
@@ -39,10 +39,10 @@ class LayerRouter {
             ctx.body = LayerSerializer.serialize(layer);
             const cache = [id, layer.slug];
             if (includes) {
-                includes.forEach(inc => {
+                includes.forEach((inc) => {
                     cache.push(`${id}-${inc}`);
                     cache.push(`${layer.slug}-${inc}`);
-                })
+                });
             }
             ctx.set('cache', cache.join(' '));
         } catch (err) {
@@ -119,12 +119,12 @@ class LayerRouter {
         const id = ctx.params.dataset;
         logger.info(`[LayerRouter] Deleting layers of dataset with id: ${id}`);
         try {
-            const layers= await LayerService.deleteByDataset(id);
+            const layers = await LayerService.deleteByDataset(id);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layers);
             const uncache = ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`];
             if (layers) {
-                layers.forEach(layer => {
+                layers.forEach((layer) => {
                     uncache.push(layer._id);
                     uncache.push(layer.slug);
                 });
@@ -182,7 +182,7 @@ class LayerRouter {
             cache.push(`${ctx.params.dataset}-layer-all`);
         }
         if (includes) {
-            includes.forEach(inc => {
+            includes.forEach((inc) => {
                 cache.push(`layer-${inc}`);
                 if (ctx.params.dataset) {
                     cache.push(`${ctx.params.dataset}-layer-all-${inc}`);
@@ -206,7 +206,7 @@ class LayerRouter {
             app: ctx.request.body.app
         };
         if (typeof resource.ids === 'string') {
-            resource.ids = resource.ids.split(',').map((elem) => elem.trim());
+            resource.ids = resource.ids.split(',').map(elem => elem.trim());
         }
         const result = await LayerService.getByDataset(resource);
         ctx.body = LayerSerializer.serialize(result, null, true);
@@ -215,15 +215,15 @@ class LayerRouter {
     static async updateEnvironment(ctx) {
         logger.info('Updating enviroment of all layers with dataset ', ctx.params.dataset, ' to environment', ctx.params.env);
         const layers = await LayerService.updateEnvironment(ctx.params.dataset, ctx.params.env);
-        const uncache = ['layer',  `${ctx.params.dataset}-layer`,  `${ctx.state.dataset.attributes.slug}-layer`, 'dataset-layer'];
+        const uncache = ['layer', `${ctx.params.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, 'dataset-layer'];
         if (layers) {
-            layers.forEach(layer => {
+            layers.forEach((layer) => {
                 uncache.push(layer._id);
                 uncache.push(layer.slug);
             });
         }
-        ctx.set('uncache', uncache.join(' '))
-        ctx.body = '';s
+        ctx.set('uncache', uncache.join(' '));
+        ctx.body = '';
     }
 
 }
@@ -251,11 +251,13 @@ const validationMiddleware = async (ctx, next) => {
     await next();
 };
 
-const datasetValidationMiddleware = async(ctx, next) => {
+const datasetValidationMiddleware = async (ctx, next) => {
     logger.info(`[LayerRouter] Validating dataset presence`);
-    // @TODO REMOVE
+
+    // supports the deprecated "layer" root object on the request
     if (ctx.request.body && ctx.request.body.layer) {
-        ctx.request.body = ctx.request.body.layer;
+        ctx.request.body = Object.assign(ctx.request.body, ctx.request.body.layer);
+        delete ctx.request.body.layer;
     }
     // END REMOVE
     try {
@@ -266,7 +268,7 @@ const datasetValidationMiddleware = async(ctx, next) => {
     await next();
 };
 
-const isMicroserviceMiddleware = async(ctx, next) => {
+const isMicroserviceMiddleware = async (ctx, next) => {
     logger.debug('Checking if is a microservice');
     const user = LayerRouter.getUser(ctx);
     if (!user || user.id !== 'microservice') {
