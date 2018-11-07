@@ -5,8 +5,8 @@
   "repository": "https://github.com/resource-watch/layer",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_PATH=app/src node ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
-    "start": "NODE_PATH=app/src node app/index.js"
+    "test": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
+    "start": "NODE_PATH=app/src node $NODE_DEBUG_OPTION app/index.js"
   },
   "keywords": [
     "layer",
@@ -18,6 +18,8 @@
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "^7.2.0",
+    "chai": "4.1.2",
+    "chai-http": "4.0.0",
     "eslint": "^3.18.0",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
