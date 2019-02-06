@@ -5,8 +5,9 @@
   "repository": "https://github.com/resource-watch/layer",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_PATH=app/src node ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
-    "start": "NODE_PATH=app/src node app/index.js"
+    "test": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
+    "start": "NODE_PATH=app/src node $NODE_DEBUG_OPTION app/index.js",
+    "coverage": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js nyc"
   },
   "keywords": [
     "layer",
@@ -18,6 +19,8 @@
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "^7.2.0",
+    "chai": "4.1.2",
+    "chai-http": "4.0.0",
     "eslint": "^3.18.0",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
@@ -32,10 +35,12 @@
     "grunt-express-server": "^0.5.1",
     "grunt-mocha-test": "^0.13.2",
     "grunt-notify": "^0.4.3",
+    "grunt-simple-nyc": "1.1.2",
     "load-grunt-tasks": "^3.4.0",
     "mocha": "^3.2.0",
     "should": "^11.2.1",
     "nock": "^9.0.2",
+    "nyc": "13.1.0",
     "superagent": "^3.3.1",
     "supertest": "^3.0.0"
   },

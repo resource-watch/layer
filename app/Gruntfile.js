@@ -14,14 +14,6 @@ module.exports = (grunt) => {
                     port: process.env.PORT,
                     output: 'started'
                 }
-            },
-            test: {
-                options: {
-                    script: 'app/index.js',
-                    node_env: 'test',
-                    port: 5000,
-                    output: 'started'
-                }
             }
         },
 
@@ -59,15 +51,30 @@ module.exports = (grunt) => {
                 }
             },
 
+        },
+        nyc: {
+            cover: {
+                options: {
+                    include: ['app/src/**'],
+                    exclude: '*.test.*',
+                    reporter: ['lcov', 'text-summary'],
+                    reportDir: 'coverage',
+                    all: true
+                },
+                cmd: false,
+                args: ['grunt', '--gruntfile', 'app/Gruntfile.js', 'mochaTest:e2e']
+            }
         }
     });
 
-    grunt.registerTask('e2eTest', ['express:test', 'mochaTest:e2e']);
+    grunt.registerTask('e2eTest', ['mochaTest:e2e']);
 
     grunt.registerTask('e2eTest-watch', ['watch:e2eTest']);
 
     grunt.registerTask('serve', ['express:dev', 'watch']);
 
     grunt.registerTask('default', 'serve');
+
+    grunt.loadNpmTasks('grunt-simple-nyc');
 
 };
