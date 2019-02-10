@@ -6,7 +6,7 @@ const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const slug = require('slug');
 const RelationshipsService = require('services/relationships.service');
-const ctRegisterMicroservice = require('ct-register-microservice-node');
+const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 const stage = process.env.NODE_ENV;
 
 
