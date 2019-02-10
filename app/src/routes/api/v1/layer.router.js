@@ -197,7 +197,7 @@ class LayerRouter {
             ctx.request.body.ids = ctx.request.body.layer.ids;
         }
         if (!ctx.request.body.ids) {
-            ctx.throw(400, 'Bad request');
+            ctx.throw(400, 'Bad request - Missing \'ids\' from request body');
             return;
         }
         logger.info(`[LayerRouter] Getting layers for datasets with id: ${ctx.request.body.ids}`);
@@ -213,7 +213,7 @@ class LayerRouter {
     }
 
     static async updateEnvironment(ctx) {
-        logger.info('Updating enviroment of all layers with dataset ', ctx.params.dataset, ' to environment', ctx.params.env);
+        logger.info('Updating environment of all layers with dataset ', ctx.params.dataset, ' to environment', ctx.params.env);
         const layers = await LayerService.updateEnvironment(ctx.params.dataset, ctx.params.env);
         const uncache = ['layer', `${ctx.params.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, 'dataset-layer'];
         if (layers) {
