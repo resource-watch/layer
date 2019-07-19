@@ -263,7 +263,7 @@ const datasetValidationMiddleware = async (ctx, next) => {
     try {
         ctx.state.dataset = await DatasetService.checkDataset(ctx);
     } catch (err) {
-        ctx.throw(err.statusCode, 'Dataset not found');
+        ctx.throw(404, 'Dataset not found');
     }
     await next();
 };
