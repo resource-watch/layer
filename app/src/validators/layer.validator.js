@@ -99,12 +99,12 @@ class LayerValidator {
         koaObj.checkBody('iso').optional().check(iso => LayerValidator.isArray(iso), 'must be an array');
         // connectorType
         koaObj.checkBody('provider').optional()
-        .toLow()
-        .check(provider => LayerValidator.isString(provider), 'must be a string');
+        .check(provider => LayerValidator.isString(provider), 'must be a string')
+            .toLow();
         // provider
         koaObj.checkBody('type').optional()
-        .toLow()
-        .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+        .check(type => LayerValidator.isString(type, koaObj), 'must be a string')
+            .toLow();
         // env
         koaObj.checkBody('env').optional()
         .toLow()
@@ -132,16 +132,13 @@ class LayerValidator {
         koaObj.checkBody('iso').optional().check(iso => LayerValidator.isArray(iso), 'must be an array');
         // connectorType
         koaObj.checkBody('provider').optional()
-        .toLow()
-        .check(provider => LayerValidator.isString(provider), 'must be a string');
+        .check(provider => LayerValidator.isString(provider), 'must be a string').toLow();
         // provider
         koaObj.checkBody('type').optional()
-        .toLow()
-        .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+        .check(type => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
         // env
         koaObj.checkBody('env').optional()
-        .toLow()
-        .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+        .check(type => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
         koaObj.checkBody('published').optional().toBoolean();
