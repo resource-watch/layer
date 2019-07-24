@@ -27,8 +27,6 @@ describe('Delete single layer by id', async () => {
         }
 
         requester = await getTestServer();
-
-        nock.cleanAll();
     });
 
     it('Deleting a single layer by id should return 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
