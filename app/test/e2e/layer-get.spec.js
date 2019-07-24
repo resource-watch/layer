@@ -3,6 +3,9 @@ const Layer = require('models/layer.model');
 const { getTestServer } = require('./test-server');
 const { createLayer, createMockDataset, ensureCorrectError } = require('./utils');
 
+nock.disableNetConnect();
+nock.enableNetConnect(process.env.HOST_IP);
+
 const layerPrefix = '/api/v1/layer';
 const datasetPrefix = '/api/v1/dataset';
 let requester;
@@ -21,24 +24,22 @@ const ensureCorrectLayer = (receivedLayer, createdLayer) => {
     receivedLayer.attributes.should.deep.equal(createdLayer);
 };
 
-describe('Layers - GET enpoints', () => {
+describe('Layers - GET endpoints', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
         requester = await getTestServer();
-
-        nock.cleanAll();
     });
 
-    it('GET /layer - should return result empty result, when layers is not exist', async () => {
+    it('GET /layer - should return result empty result, when layers doesn\'t exist', async () => {
         const list = await requester.get(layerPrefix);
         list.status.should.equal(200);
         list.body.should.have.property('data').and.be.an('array').and.length(0);
     });
 
-    it('GET /layer - should return layers, when layers is exist', async () => {
+    it('GET /layer - should return layers, when layers exists', async () => {
         const testLayer = createLayer();
         await new Layer(testLayer).save();
 
@@ -47,13 +48,13 @@ describe('Layers - GET enpoints', () => {
         ensureCorrectLayer(list.body.data[0], testLayer);
     });
 
-    it('GET /layer/:layer - should return error not found, when layer is not exist', async () => {
+    it('GET /layer/:layer - should return error not found, when layer doesn\'t exist', async () => {
         const layer = await requester.get(`${layerPrefix}/123`);
         layer.status.should.equal(404);
         ensureCorrectError(layer.body, 'Layer with id \'123\' doesn\'t exist');
     });
 
-    it('GET /layer/:layer - should return layer, when layer is exist', async () => {
+    it('GET /layer/:layer - should return layer, when layer exists', async () => {
         const testLayer = createLayer();
         await new Layer(testLayer).save();
 
@@ -62,13 +63,13 @@ describe('Layers - GET enpoints', () => {
         ensureCorrectLayer(layer.body.data, testLayer);
     });
 
-    it('GET /dataset/:dataset/layer - should return error not found, when dataset is not exist', async () => {
+    it('GET /dataset/:dataset/layer - should return error not found, when dataset doesn\'t exist', async () => {
         const datasetLayers = await requester.get(`${datasetPrefix}/321/layer`);
         datasetLayers.status.should.equal(404);
         ensureCorrectError(datasetLayers.body, 'Dataset not found');
     });
 
-    it('GET /dataset/:dataset/layer - should return layers for specific dataset, when dataset is exist', async () => {
+    it('GET /dataset/:dataset/layer - should return layers for specific dataset, when dataset exists', async () => {
         createMockDataset('123');
         const testLayer = createLayer(['rw'], '123');
         await new Layer(testLayer).save();
