@@ -10,7 +10,6 @@ const {
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const layerPrefix = '/api/v1/layer';
 let requester;
 
 const updateEnv = async ({
@@ -21,11 +20,11 @@ const updateEnv = async ({
     await new Layer(layer).save();
 
     return requester
-        .patch(`${layerPrefix}/change-environment/${datasetId}/${env}`)
+        .patch(`/api/v1/layer/change-environment/${datasetId}/${env}`)
         .send({ loggedUser: role });
 };
 
-describe('Layers - PATCH ENV endpoint', () => {
+describe('Layer env update', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
@@ -34,25 +33,25 @@ describe('Layers - PATCH ENV endpoint', () => {
         requester = await getTestServer();
     });
 
-    it('PATCH /layer/change-environment/:dataset/:env - should return error not found, when dataset doesn\'t exist', async () => {
-        const envLayer = await requester.patch(`${layerPrefix}/change-environment/123/test`);
+    it('Updating the env of a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        const envLayer = await requester.patch(`/api/v1/layer/change-environment/123/test`);
         envLayer.status.should.equal(404);
         ensureCorrectError(envLayer.body, 'Dataset not found');
     });
 
-    it('PATCH /layer/change-environment/:dataset/:env - Update layer env without being authenticated should fail', async () => {
+    it('Updating the env of a layer without being authenticated should return a 401 "Not authorized" error', async () => {
         const envLayer = await updateEnv({ role: null });
-        envLayer.status.should.equal(403);
+        envLayer.status.should.equal(401);
         ensureCorrectError(envLayer.body, 'Not authorized');
     });
 
-    it('PATCH /layer/change-environment/:dataset/:env - Update layer env while being authenticated not as MICROSERVICE should fail', async () => {
+    it('Updating the env of a layer while being authenticated as ADMIN should return a 403 "Forbidden" error', async () => {
         const envLayer = await updateEnv({ role: ROLES.ADMIN });
         envLayer.status.should.equal(403);
-        ensureCorrectError(envLayer.body, 'Not authorized');
+        ensureCorrectError(envLayer.body, 'Forbidden');
     });
 
-    it('PATCH /layer/change-environment/:dataset/:env - Should update layer env', async () => {
+    it('Updating the env of a layer should update the layer env (happy case)', async () => {
         const layerId = getUUID();
 
         const envLayer = await updateEnv({ role: ROLES.MICROSERVICE, layerId });

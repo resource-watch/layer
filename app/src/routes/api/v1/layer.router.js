@@ -268,11 +268,15 @@ const datasetValidationMiddleware = async (ctx, next) => {
     await next();
 };
 
-const isMicroserviceMiddleware = async (ctx, next) => {
+const isMicroservice = async (ctx, next) => {
     logger.debug('Checking if is a microservice');
     const user = LayerRouter.getUser(ctx);
-    if (!user || user.id !== 'microservice') {
+    if (!user || !user.role) {
         ctx.throw(401, 'Not authorized');
+        return;
+    }
+    if (user.id !== 'microservice') {
+        ctx.throw(403, 'Forbidden');
         return;
     }
     await next();
@@ -322,15 +326,6 @@ const authorizationMiddleware = async (ctx, next) => {
     await next(); // SUPERADMIN is included here
 };
 
-const isMicroservice = async (ctx, next) => {
-    logger.debug('Checking if the call is from a microservice');
-    if (ctx.request.body && ctx.request.body.loggedUser && ctx.request.body.loggedUser.id === 'microservice') {
-        await next();
-    } else {
-        ctx.throw(403, 'Not authorized');
-    }
-};
-
 router.get('/layer', LayerRouter.getAll);
 router.get('/layer/:layer', LayerRouter.get);
 router.get('/dataset/:dataset/layer', datasetValidationMiddleware, LayerRouter.getAll);
@@ -339,7 +334,7 @@ router.post('/dataset/:dataset/layer', datasetValidationMiddleware, validationMi
 router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerRouter.get);
 router.patch('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
 router.delete('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
-router.delete('/dataset/:dataset/layer', datasetValidationMiddleware, isMicroserviceMiddleware, LayerRouter.deleteByDataset);
+router.delete('/dataset/:dataset/layer', datasetValidationMiddleware, isMicroservice, LayerRouter.deleteByDataset);
 
 router.post('/layer/find-by-ids', LayerRouter.getByIds);
 router.patch('/layer/change-environment/:dataset/:env', datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
