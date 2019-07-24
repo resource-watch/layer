@@ -1,12 +1,16 @@
 const nock = require('nock');
+const chai = require('chai');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./test-server');
 const { ensureCorrectError, createMockDataset, createLayer } = require('./utils');
 const { ROLES } = require('./test.constants');
 
+const should = chai.should();
+
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
+
 
 let requester;
 
@@ -27,8 +31,6 @@ describe('Delete all layers for a dataset', async () => {
         }
 
         requester = await getTestServer();
-
-        nock.cleanAll();
     });
 
     it('Deleting all layers for a dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
@@ -64,7 +66,38 @@ describe('Delete all layers for a dataset', async () => {
     });
 
     it('Deleting all layers for a dataset be successful', async () => {
-        const datasetLayers = await deleteLayers(ROLES.MICROSERVICE);
+        createMockDataset('123');
+        const layer = createLayer(['rw'], '123');
+        await new Layer(layer).save();
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/graph/layer/${layer.dataset}`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/layer/${layer.dataset}/expire-cache`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        const datasetLayers = await requester
+            .delete(`/api/v1/dataset/123/layer?loggedUser=${JSON.stringify(ROLES.MICROSERVICE)}`)
+            .send();
+
         datasetLayers.status.should.equal(200);
 
         const layers = await Layer.find({});

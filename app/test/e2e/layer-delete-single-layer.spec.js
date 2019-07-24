@@ -66,7 +66,36 @@ describe('Delete single layer by id', async () => {
 
     it('Deleting a single layer by id should delete the specific layer in specific dataset (happy case)', async () => {
         const layer = createLayer(['rw'], '123', '123');
-        const datasetLayer = await deleteLayer(ROLES.ADMIN, '123', ['rw'], layer);
+        createMockDataset('123');
+        await new Layer(layer).save();
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/graph/layer/${layer.dataset}`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/layer/${layer._id}/expire-cache`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        const datasetLayer = await requester
+            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .send();
 
         datasetLayer.status.should.equal(200);
         datasetLayer.body.data.id.should.equal(layer._id);
