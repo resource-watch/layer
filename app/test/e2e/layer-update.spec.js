@@ -103,9 +103,27 @@ describe('Layer update', () => {
             interactionConfig: { test: true },
             applicationConfig: { test: true },
             staticImageConfig: { test: true }
-        };
+        }
 
-        const datasetLayer = await updateLayer({ role: ROLES.ADMIN }, LAYER_TO_UPDATE);
+        const datasetId = getUUID();
+        const layerId = getUUID();
+
+        createMockDataset(datasetId);
+        const layer = createLayer(['rw'], datasetId, layerId);
+        await new Layer(layer).save();
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/layer/${layer._id}/expire-cache`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        const datasetLayer = await requester
+            .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .send(LAYER_TO_UPDATE);
+
         datasetLayer.status.should.equal(200);
         const responseData = datasetLayer.body.data;
 

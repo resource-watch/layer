@@ -61,7 +61,6 @@ async function init() {
                     try {
                         error = JSON.parse(inErr);
                     } catch (e) {
-                        logger.error('Parsing error');
                         error = inErr;
                     }
                     ctx.status = error.status || ctx.status || 500;
@@ -109,4 +108,3 @@ async function init() {
 }
 
 module.exports = init;
-
