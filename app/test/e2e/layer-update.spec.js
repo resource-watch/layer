@@ -2,7 +2,7 @@ const nock = require('nock');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./test-server');
 const {
-    ROLES, WRONG_DATAS, LAYER, LAYER_TO_UPDATE
+    ROLES, LAYER
 } = require('./test.constants');
 const {
     createLayer, createMockDataset, ensureCorrectError, getUUID
@@ -26,7 +26,7 @@ const updateLayer = async ({
         .send(layerToUpdate);
 };
 
-describe('Layers - PATCH endpoint', () => {
+describe('Layer update', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
@@ -35,25 +35,25 @@ describe('Layers - PATCH endpoint', () => {
         requester = await getTestServer();
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - should return error not found, when dataset doesn\'t exist', async () => {
+    it('Updating a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
         const datasetLayer = await requester.patch(`${datasetPrefix}/321/layer/123`);
         datasetLayer.status.should.equal(404);
         ensureCorrectError(datasetLayer.body, 'Dataset not found');
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - Update specific layer without being authenticated should fail', async () => {
+    it('Updating a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
         const datasetLayer = await updateLayer({ role: {} });
         datasetLayer.status.should.equal(401);
         ensureCorrectError(datasetLayer.body, 'Unauthorized');
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - Update specific layer while being authenticated as USER should fail', async () => {
+    it('Updating a layer while being authenticated as USER should return a 403 "Forbidden" error', async () => {
         const datasetLayer = await updateLayer({ role: ROLES.USER });
         datasetLayer.status.should.equal(403);
         ensureCorrectError(datasetLayer.body, 'Forbidden');
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - should return error not found, when layer doesn\'t exist', async () => {
+    it('Updating a layer should return a 404 "Layer with id X doesn\'t exist" error when the layer doesn\'t exist', async () => {
         createMockDataset('123');
         const layer = createLayer(['rw'], '123', '321');
         await new Layer(layer).save();
@@ -66,15 +66,45 @@ describe('Layers - PATCH endpoint', () => {
         ensureCorrectError(datasetLayer.body, 'Layer with id \'123\' doesn\'t exist');
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - Update specific layer with wrong data, should fail', async () => {
-        await Promise.all(WRONG_DATAS.map(async ({ data, expectedError }) => {
+    it('Updating a layer with wrong data should return a 400 error and a meaningful error message', async () => {
+        const WRONG_DATA = [
+            { expectedError: '- name: can not be empty - ', data: { name: 123 } },
+            { expectedError: '- application: must be a non-empty array - ', data: { application: {} } },
+            { expectedError: '- description: must be a string - ', data: { description: 123 } },
+            { expectedError: '- iso: must be an array - ', data: { iso: {} } },
+            { expectedError: '- provider: must be a string - ', data: { provider: 123 } },
+            { expectedError: '- type: must be a string - ', data: { type: 123 } },
+            { expectedError: '- env: must be a string - ', data: { env: 123 } },
+            { expectedError: '- layerConfig: must be an object - ', data: { layerConfig: [] } },
+            { expectedError: '- legendConfig: must be an object - ', data: { legendConfig: [] } },
+            { expectedError: '- interactionConfig: must be an object - ', data: { interactionConfig: [] } },
+            { expectedError: '- applicationConfig: must be an object - ', data: { applicationConfig: [] } },
+            { expectedError: '- staticImageConfig: must be an object - ', data: { staticImageConfig: [] } }
+        ];
+
+        await Promise.all(WRONG_DATA.map(async ({ data, expectedError }) => {
             const datasetLayer = await updateLayer({ role: ROLES.ADMIN }, data);
             datasetLayer.status.should.equal(400);
             ensureCorrectError(datasetLayer.body, expectedError);
         }));
     });
 
-    it('PATCH /dataset/:dataset/layer/:layer - Update specific layer should update', async () => {
+    it('Updating a layer should update should be successful and return the updated layer (happy case)', async () => {
+        const LAYER_TO_UPDATE = {
+            name: 'test update 123',
+            application: ['rw'],
+            description: 'test description',
+            iso: ['123'],
+            provider: 'test prodiver',
+            default: true,
+            published: true,
+            layerConfig: { test: true },
+            legendConfig: { test: true },
+            interactionConfig: { test: true },
+            applicationConfig: { test: true },
+            staticImageConfig: { test: true }
+        };
+
         const datasetLayer = await updateLayer({ role: ROLES.ADMIN }, LAYER_TO_UPDATE);
         datasetLayer.status.should.equal(200);
         const responseData = datasetLayer.body.data;
