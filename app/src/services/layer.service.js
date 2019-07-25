@@ -250,7 +250,7 @@ class LayerService {
             logger.error('Error expiring cache', err);
         }
         try {
-            await LayerService.deleteMedadata(id, currentLayer._id);
+            await LayerService.deleteMetadata(id, currentLayer._id);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
@@ -275,7 +275,7 @@ class LayerService {
                     logger.error('Error removing layer of the graph', err);
                 }
                 try {
-                    await LayerService.deleteMedadata(id, currentLayer._id);
+                    await LayerService.deleteMetadata(id, currentLayer._id);
                 } catch (err) {
                     logger.error('Error removing metadata of the layer', err);
                 }
@@ -297,7 +297,7 @@ class LayerService {
         });
     }
 
-    static async deleteMedadata(datasetId, layerId) {
+    static async deleteMetadata(datasetId, layerId) {
         logger.debug('Removing metadata of the layer');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
