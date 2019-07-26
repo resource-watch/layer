@@ -17,10 +17,11 @@ const koaBody = require('koa-body')({
     textLimit: '50mb'
 });
 
-let dbOptions = {};
+let dbOptions = { useNewUrlParser: true };
 // KUBE CLUSTER
 if (mongoUri.indexOf('replicaSet') > -1) {
     dbOptions = {
+        useNewUrlParser: true,
         db: { native_parser: true },
         replset: {
             auto_reconnect: false,

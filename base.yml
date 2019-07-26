@@ -1,8 +1,0 @@
-base:
-  build: .
-  ports:
-    - "6000:6000"
-  container_name: layer
-  environment:
-    PORT: 6000
-    NODE_PATH: app/src
