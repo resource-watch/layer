@@ -22,8 +22,6 @@ describe('Layer create tests', () => {
         requester = await getTestServer();
 
         Layer.remove({}).exec();
-
-        nock.cleanAll();
     });
 
     it('Create a layer without being authenticated should fail (401 http code)', async () => {

@@ -1,3 +1,5 @@
+const nock = require('nock');
+
 const getUUID = () => Math.random().toString(36).substring(7);
 
 const layerConfig = {
@@ -21,9 +23,58 @@ const layerConfig = {
     }
 };
 
-const createLayer = (apps = ['rw']) => {
-    const uuid = getUUID();
-    const datasetUuid = getUUID();
+const ensureCorrectError = (body, errMessage) => {
+    body.should.have.property('errors').and.be.an('array');
+    body.errors[0].should.have.property('detail').and.equal(errMessage);
+};
+
+const createMockDataset = (id) => {
+    nock(process.env.CT_URL)
+        .get(`/v1/dataset/${id}`)
+        .reply(200, {
+            data: {
+                id,
+                type: 'dataset',
+                attributes: {
+                    name: 'Uncontrolled Public-Use Airports -- U.S.',
+                    slug: 'Uncontrolled-Public-Use-Airports-US_2',
+                    type: null,
+                    subtitle: null,
+                    application: ['rw'],
+                    dataPath: null,
+                    attributesPath: null,
+                    connectorType: 'rest',
+                    provider: 'featureservice',
+                    userId: '1a10d7c6e0a37126611fd7a7',
+                    connectorUrl: 'https://services.arcgis.com/uDTUpUPbk8X8mXwl/arcgis/rest/services/Public_Schools_in_Onondaga_County/FeatureServer/0?f=json',
+                    tableName: 'Public_Schools_in_Onondaga_County',
+                    status: 'pending',
+                    published: true,
+                    overwrite: false,
+                    verified: false,
+                    blockchain: {},
+                    mainDateField: null,
+                    env: 'production',
+                    geoInfo: false,
+                    protected: false,
+                    legend: {
+                        date: [], region: [], country: [], nested: []
+                    },
+                    clonedHost: {},
+                    errorMessage: null,
+                    taskId: null,
+                    updatedAt: '2018-11-05T15:25:53.321Z',
+                    dataLastUpdated: null,
+                    widgetRelevantProps: [],
+                    layerRelevantProps: []
+                }
+            }
+        });
+};
+
+const createLayer = (apps = ['rw'], datasetID, layerId) => {
+    const uuid = layerId || getUUID();
+    const datasetUuid = datasetID || getUUID();
 
     return {
         _id: uuid,
@@ -58,5 +109,8 @@ const createLayer = (apps = ['rw']) => {
 };
 
 module.exports = {
-    createLayer
+    createLayer,
+    createMockDataset,
+    ensureCorrectError,
+    getUUID
 };
