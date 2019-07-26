@@ -2,7 +2,7 @@ language: node_js
 services:
   - mongodb
 node_js:
-  - "7.7"
+  - "12.6"
   - "12"
 cache:
   directories:
