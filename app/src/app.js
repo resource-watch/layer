@@ -4,7 +4,7 @@ const koaLogger = require('koa-logger');
 const mongoose = require('mongoose');
 const config = require('config');
 const loader = require('loader');
-const ctRegisterMicroservice = require('ct-register-microservice-node');
+const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 const ErrorSerializer = require('serializers/error.serializer');
 
 const mongoUri = process.env.MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
@@ -17,10 +17,11 @@ const koaBody = require('koa-body')({
     textLimit: '50mb'
 });
 
-let dbOptions = {};
+let dbOptions = { useNewUrlParser: true };
 // KUBE CLUSTER
 if (mongoUri.indexOf('replicaSet') > -1) {
     dbOptions = {
+        useNewUrlParser: true,
         db: { native_parser: true },
         replset: {
             auto_reconnect: false,
@@ -61,7 +62,6 @@ async function init() {
                     try {
                         error = JSON.parse(inErr);
                     } catch (e) {
-                        logger.error('Parsing error');
                         error = inErr;
                     }
                     ctx.status = error.status || ctx.status || 500;
@@ -109,4 +109,3 @@ async function init() {
 }
 
 module.exports = init;
-

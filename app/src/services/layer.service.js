@@ -1,12 +1,12 @@
 const logger = require('logger');
 const Layer = require('models/layer.model');
 const GraphService = require('services/graph.service');
-const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const slug = require('slug');
 const RelationshipsService = require('services/relationships.service');
-const ctRegisterMicroservice = require('ct-register-microservice-node');
+const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
+
 const stage = process.env.NODE_ENV;
 
 
@@ -53,31 +53,31 @@ class LayerService {
             } else if (param !== 'env') {
                 switch (Layer.schema.paths[param].instance) {
 
-                case 'String':
-                    query[param] = {
-                        $regex: query[param],
-                        $options: 'i'
-                    };
-                    break;
-                case 'Array':
-                    if (query[param].indexOf('@') >= 0) {
+                    case 'String':
                         query[param] = {
-                            $all: query[param].split('@').map(elem => elem.trim())
+                            $regex: query[param],
+                            $options: 'i'
                         };
-                    } else {
-                        query[param] = {
-                            $in: query[param].split(',').map(elem => elem.trim())
-                        };
-                    }
-                    break;
-                case 'Mixed':
-                    query[param] = { $ne: null };
-                    break;
-                case 'Date':
-                    query[param] = query[param];
-                    break;
-                default:
-                    query[param] = query[param];
+                        break;
+                    case 'Array':
+                        if (query[param].indexOf('@') >= 0) {
+                            query[param] = {
+                                $all: query[param].split('@').map(elem => elem.trim())
+                            };
+                        } else {
+                            query[param] = {
+                                $in: query[param].split(',').map(elem => elem.trim())
+                            };
+                        }
+                        break;
+                    case 'Mixed':
+                        query[param] = { $ne: null };
+                        break;
+                    case 'Date':
+                        query[param] = query[param];
+                        break;
+                    default:
+                        query[param] = query[param];
 
                 }
             } else if (param === 'env') {
@@ -115,7 +115,7 @@ class LayerService {
     }
 
     static async get(id, includes) {
-        logger.debug(`[LayerService]: Getting layer with id:  ${id}`);
+        logger.debug(`[LayerService]: Getting layer with id: ${id}`);
         logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
         const layer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
@@ -221,7 +221,7 @@ class LayerService {
     }
 
     static async delete(id) {
-        logger.debug(`[LayerService]: Getting layer with id:  ${id}`);
+        logger.debug(`[LayerService]: Getting layer with id: ${id}`);
         logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
         const currentLayer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
@@ -247,10 +247,10 @@ class LayerService {
         try {
             await LayerService.expireCacheTiles(id, currentLayer._id);
         } catch (err) {
-            logger.error('Error expirating cache', err);
+            logger.error('Error expiring cache', err);
         }
         try {
-            await LayerService.deleteMedadata(id, currentLayer._id);
+            await LayerService.deleteMetadata(id, currentLayer._id);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
@@ -275,14 +275,14 @@ class LayerService {
                     logger.error('Error removing layer of the graph', err);
                 }
                 try {
-                    await LayerService.deleteMedadata(id, currentLayer._id);
+                    await LayerService.deleteMetadata(id, currentLayer._id);
                 } catch (err) {
                     logger.error('Error removing metadata of the layer', err);
                 }
                 try {
                     await LayerService.expireCacheTiles(id, currentLayer._id);
                 } catch (err) {
-                    logger.error('Error expirating cache', err);
+                    logger.error('Error expiring cache', err);
                 }
             }
         }
@@ -290,14 +290,14 @@ class LayerService {
     }
 
     static async expireCacheTiles(layerId) {
-        logger.debug('Expirating cache of tiles');
+        logger.debug('Expiring cache of tiles');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/layer/${layerId}/expire-cache`,
             method: 'DELETE'
         });
     }
 
-    static async deleteMedadata(datasetId, layerId) {
+    static async deleteMetadata(datasetId, layerId) {
         logger.debug('Removing metadata of the layer');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
@@ -354,7 +354,7 @@ class LayerService {
             query.application = resource.app;
         }
         logger.debug(`[LayerService] IDs query: ${JSON.stringify(query)}`);
-        return await Layer.find(query).exec();
+        return Layer.find(query).exec();
     }
 
     static async hasPermission(id, user) {
