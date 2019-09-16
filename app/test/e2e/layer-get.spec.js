@@ -24,30 +24,27 @@ describe('Get layers', () => {
     });
 
     it('Getting layers should return a list of layers (happy case)', async () => {
-        const testLayer = createLayer();
-        await new Layer(testLayer).save();
+        const savedLayer = await new Layer(createLayer()).save();
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], testLayer);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
-        const testLayer = createLayer();
-        await new Layer(testLayer).save();
+        const savedLayer = await new Layer(createLayer()).save();
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], testLayer);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        const testLayer = createLayer();
-        await new Layer(testLayer).save();
+        const savedLayer = await new Layer(createLayer()).save();
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], testLayer);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
     });
 
     afterEach(() => {

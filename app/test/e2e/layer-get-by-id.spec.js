@@ -24,12 +24,11 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers by id should return the layer when it exists (happy case)', async () => {
-        const testLayer = createLayer();
-        await new Layer(testLayer).save();
+        const savedLayer = await new Layer(createLayer()).save();
 
-        const layer = await requester.get(`/api/v1/layer/${testLayer._id}`);
+        const layer = await requester.get(`/api/v1/layer/${savedLayer._id}`);
         layer.status.should.equal(200);
-        ensureCorrectLayer(layer.body.data, testLayer);
+        ensureCorrectLayer(layer.body.data, savedLayer.toObject());
     });
 
     it('Getting layers by dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
@@ -40,13 +39,12 @@ describe('Get layers by id', () => {
 
     it('Getting layers by dataset should return the layers for specific dataset when dataset exists (happy case)', async () => {
         createMockDataset('123');
-        const testLayer = createLayer(['rw'], '123');
-        await new Layer(testLayer).save();
+        const savedLayer = await new Layer(createLayer(['rw'], '123')).save();
 
         const datasetLayers = await requester.get(`/api/v1/dataset/123/layer`);
         datasetLayers.status.should.equal(200);
         datasetLayers.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(datasetLayers.body.data[0], testLayer);
+        ensureCorrectLayer(datasetLayers.body.data[0], savedLayer.toObject());
     });
 
     afterEach(() => {

@@ -117,6 +117,7 @@ const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) =>
     receivedLayer.should.have.property('attributes').and.instanceOf(Object);
 
     delete createdLayer._id;
+    delete createdLayer.__v;
     delete createdLayer.status;
 
     createdLayer.interactionConfig = {};
@@ -125,7 +126,9 @@ const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) =>
         ...createdLayer,
         createdAt: createdLayer.createdAt.toISOString(),
         updatedAt: createdLayer.updatedAt.toISOString(),
-        ...additionalData
+        ...additionalData,
+        staticImageConfig: {},
+        applicationConfig: {}
     };
     // remove fields which are not present to user from response body;
     delete expectedLayer._id;
