@@ -1,9 +1,10 @@
-const ROLES = {
+const USERS = {
     USER: {
         id: '1a10d7c6e0a37126611fd7a7',
         role: 'USER',
         provider: 'local',
         email: 'user@control-tower.org',
+        name: 'test user',
         extraUserData: {
             apps: [
                 'rw',
@@ -21,6 +22,7 @@ const ROLES = {
         role: 'MANAGER',
         provider: 'local',
         email: 'user@control-tower.org',
+        name: 'test manager',
         extraUserData: {
             apps: [
                 'rw',
@@ -38,6 +40,7 @@ const ROLES = {
         role: 'ADMIN',
         provider: 'local',
         email: 'user@control-tower.org',
+        name: 'test admin',
         extraUserData: {
             apps: [
                 'rw',
@@ -75,6 +78,6 @@ const LAYER = {
 };
 
 module.exports = {
-    ROLES,
+    USERS,
     LAYER
 };

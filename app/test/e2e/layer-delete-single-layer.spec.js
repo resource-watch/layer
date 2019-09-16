@@ -1,9 +1,9 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
-const { getTestServer } = require('./test-server');
+const { getTestServer } = require('./utils/test-server');
 const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
-const { ROLES } = require('./test.constants');
+const { USERS } = require('./utils/test.constants');
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -44,7 +44,7 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id while being authenticated as USER should return a 403 "Forbidden" error', async () => {
-        const datasetLayer = await deleteLayer(ROLES.USER, '123');
+        const datasetLayer = await deleteLayer(USERS.USER, '123');
         datasetLayer.status.should.equal(403);
         ensureCorrectError(datasetLayer.body, 'Forbidden');
     });
@@ -55,7 +55,7 @@ describe('Delete single layer by id', async () => {
         await new Layer(layer).save();
 
         const datasetLayer = await requester
-            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -92,7 +92,7 @@ describe('Delete single layer by id', async () => {
             });
 
         const datasetLayer = await requester
-            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .send();
 
         datasetLayer.status.should.equal(200);

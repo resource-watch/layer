@@ -1,9 +1,9 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
-const { getTestServer } = require('./test-server');
+const { getTestServer } = require('./utils/test-server');
 const {
-    ROLES, LAYER
-} = require('./test.constants');
+    USERS, LAYER
+} = require('./utils/test.constants');
 const {
     createLayer, createMockDataset, ensureCorrectError, getUUID
 } = require('./utils/helpers');
@@ -48,7 +48,7 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer while being authenticated as USER should return a 403 "Forbidden" error', async () => {
-        const datasetLayer = await updateLayer({ role: ROLES.USER });
+        const datasetLayer = await updateLayer({ role: USERS.USER });
         datasetLayer.status.should.equal(403);
         ensureCorrectError(datasetLayer.body, 'Forbidden');
     });
@@ -59,7 +59,7 @@ describe('Layer update', () => {
         await new Layer(layer).save();
 
         const datasetLayer = await requester
-            .delete(`${datasetPrefix}/123/layer/123?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .delete(`${datasetPrefix}/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -83,7 +83,7 @@ describe('Layer update', () => {
         ];
 
         await Promise.all(WRONG_DATA.map(async ({ data, expectedError }) => {
-            const datasetLayer = await updateLayer({ role: ROLES.ADMIN }, data);
+            const datasetLayer = await updateLayer({ role: USERS.ADMIN }, data);
             datasetLayer.status.should.equal(400);
             ensureCorrectError(datasetLayer.body, expectedError);
         }));
@@ -121,7 +121,7 @@ describe('Layer update', () => {
             });
 
         const datasetLayer = await requester
-            .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}?loggedUser=${JSON.stringify(ROLES.ADMIN)}`)
+            .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .send(LAYER_TO_UPDATE);
 
         datasetLayer.status.should.equal(200);
