@@ -3,7 +3,7 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils');
+const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
 const { ROLES } = require('./test.constants');
 
 const should = chai.should();
@@ -104,8 +104,8 @@ describe('Delete all layers for a dataset', async () => {
         expect(layers).to.be.length(0);
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

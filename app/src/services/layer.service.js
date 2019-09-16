@@ -13,7 +13,7 @@ const stage = process.env.NODE_ENV;
 class LayerService {
 
     static async getSlug(name) {
-        let valid = false;
+        const valid = false;
         let slugTemp = null;
         let i = 0;
         while (!valid) {
@@ -32,8 +32,8 @@ class LayerService {
     }
 
     static getFilteredQuery(query, ids = []) {
-        const collection = query.collection;
-        const favourite = query.favourite;
+        const { collection } = query;
+        const { favourite } = query;
         if (!query.application && query.app) {
             query.application = query.app;
             if (favourite) {
@@ -264,7 +264,7 @@ class LayerService {
             dataset: id
         }).exec();
         if (layers) {
-            for (let i = 0, length = layers.length; i < length; i++) {
+            for (let i = 0, { length } = layers; i < length; i++) {
                 const currentLayer = layers[i];
                 logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
                 await currentLayer.remove();
@@ -360,9 +360,7 @@ class LayerService {
     static async hasPermission(id, user) {
         let permission = true;
         const layer = await LayerService.get(id);
-        const appPermission = layer.application.find(layerApp =>
-            user.extraUserData.apps.find(app => app === layerApp)
-        );
+        const appPermission = layer.application.find(layerApp => user.extraUserData.apps.find(app => app === layerApp));
         if (!appPermission) {
             permission = false;
         }

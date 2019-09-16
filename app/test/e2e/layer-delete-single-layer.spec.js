@@ -2,7 +2,7 @@ const nock = require('nock');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils');
+const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
 const { ROLES } = require('./test.constants');
 
 nock.disableNetConnect();
@@ -105,6 +105,7 @@ describe('Delete single layer by id', async () => {
         delete layer.status;
         // set properties which are created on server side
         layer.interactionConfig = attributes.interactionConfig;
+        layer.createdAt = attributes.createdAt;
         layer.updatedAt = attributes.updatedAt;
 
         attributes.should.deep.equal(layer);
@@ -113,8 +114,8 @@ describe('Delete single layer by id', async () => {
         expect(layers).to.be.length(0);
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

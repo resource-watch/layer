@@ -5,7 +5,7 @@ const { getTestServer } = require('./test-server');
 const { ROLES } = require('./test.constants');
 const {
     createLayer, createMockDataset, ensureCorrectError, getUUID
-} = require('./utils');
+} = require('./utils/helpers');
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -60,8 +60,8 @@ describe('Layer env update', () => {
         expect(layer.env).to.be.equal('test');
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -51,11 +51,7 @@ class RelationshipsService {
                 }
             });
             logger.debug(result);
-            return result.data.map(col => {
-                return col.attributes.resources.filter(res => res.type === 'layer');
-            }).reduce((pre, cur) => {
-                return pre.concat(cur);
-            }).map(el => el.id);
+            return result.data.map(col => col.attributes.resources.filter(res => res.type === 'layer')).reduce((pre, cur) => pre.concat(cur)).map(el => el.id);
         } catch (e) {
             throw new Error(e);
         }
