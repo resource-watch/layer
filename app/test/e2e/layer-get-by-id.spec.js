@@ -47,8 +47,8 @@ describe('Get layers by id', () => {
         ensureCorrectLayer(datasetLayers.body.data[0], savedLayer.toObject());
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
