@@ -2,7 +2,7 @@
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { createLayer } = require('./utils');
+const { createLayer } = require('./utils/helpers');
 
 const { getTestServer } = require('./test-server');
 

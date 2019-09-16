@@ -3,7 +3,7 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils');
+const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
 const { ROLES } = require('./test.constants');
 
 const should = chai.should();

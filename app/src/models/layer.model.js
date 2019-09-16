@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
 const uuidV4 = require('uuid/v4');
-const Schema = mongoose.Schema;
+
+const { Schema } = mongoose;
 
 const Layer = new Schema({
     _id: { type: String, default: uuidV4 },
@@ -27,6 +28,7 @@ const Layer = new Schema({
     applicationConfig: { type: Schema.Types.Mixed },
     interactionConfig: { type: Schema.Types.Mixed },
     staticImageConfig: { type: Schema.Types.Mixed },
+    createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 

@@ -5,7 +5,7 @@ const { getTestServer } = require('./test-server');
 const { ROLES } = require('./test.constants');
 const {
     createLayer, createMockDataset, ensureCorrectError, getUUID
-} = require('./utils');
+} = require('./utils/helpers');
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

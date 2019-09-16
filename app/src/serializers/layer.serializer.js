@@ -1,4 +1,3 @@
-
 class LayerSerializer {
 
     static serializeElement(el) {
@@ -23,6 +22,7 @@ class LayerSerializer {
                 interactionConfig: el.interactionConfig || {},
                 applicationConfig: el.applicationConfig || {},
                 staticImageConfig: el.staticImageConfig || {},
+                createdAt: el.createdAt,
                 updatedAt: el.updatedAt,
                 user: el.user
             }
@@ -34,16 +34,14 @@ class LayerSerializer {
         if (data) {
             if (data.docs) {
                 result.data = data.docs.map(el => LayerSerializer.serializeElement(el));
-            } else {
-                if (Array.isArray(data)) {
-                    if (data.length === 1 && !forceArray) {
-                        result.data = LayerSerializer.serializeElement(data[0]);
-                    } else {
-                        result.data = data.map(el => LayerSerializer.serializeElement(el));
-                    }
+            } else if (Array.isArray(data)) {
+                if (data.length === 1 && !forceArray) {
+                    result.data = LayerSerializer.serializeElement(data[0]);
                 } else {
-                    result.data = LayerSerializer.serializeElement(data);
+                    result.data = data.map(el => LayerSerializer.serializeElement(el));
                 }
+            } else {
+                result.data = LayerSerializer.serializeElement(data);
             }
         }
         if (link) {
