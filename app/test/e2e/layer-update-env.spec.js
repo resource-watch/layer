@@ -1,8 +1,8 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
-const { getTestServer } = require('./test-server');
-const { ROLES } = require('./test.constants');
+const { getTestServer } = require('./utils/test-server');
+const { USERS } = require('./utils/test.constants');
 const {
     createLayer, createMockDataset, ensureCorrectError, getUUID
 } = require('./utils/helpers');
@@ -46,7 +46,7 @@ describe('Layer env update', () => {
     });
 
     it('Updating the env of a layer while being authenticated as ADMIN should return a 403 "Forbidden" error', async () => {
-        const envLayer = await updateEnv({ role: ROLES.ADMIN });
+        const envLayer = await updateEnv({ role: USERS.ADMIN });
         envLayer.status.should.equal(403);
         ensureCorrectError(envLayer.body, 'Forbidden');
     });
@@ -54,7 +54,7 @@ describe('Layer env update', () => {
     it('Updating the env of a layer should update the layer env (happy case)', async () => {
         const layerId = getUUID();
 
-        const envLayer = await updateEnv({ role: ROLES.MICROSERVICE, layerId });
+        const envLayer = await updateEnv({ role: USERS.MICROSERVICE, layerId });
         envLayer.status.should.equal(200);
         const layer = await Layer.findOne({ _id: layerId });
         expect(layer.env).to.be.equal('test');

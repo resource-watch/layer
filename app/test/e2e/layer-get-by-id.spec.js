@@ -1,7 +1,9 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
-const { getTestServer } = require('./test-server');
+const { getTestServer } = require('./utils/test-server');
 const { createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer } = require('./utils/helpers');
+const { createMockUser } = require('./utils/mocks');
+const { USERS: { USER, MANAGER, ADMIN } } = require('./utils/test.constants');
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -29,6 +31,87 @@ describe('Get layers by id', () => {
         const layer = await requester.get(`/api/v1/layer/${savedLayer._id}`);
         layer.status.should.equal(200);
         ensureCorrectLayer(layer.body.data, savedLayer.toObject());
+    });
+
+    it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUser([USER]);
+
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
+            .query({
+                includes: 'user',
+                loggedUser: JSON.stringify(USER)
+            });
+
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
+            user: {
+                email: USER.email,
+                name: USER.name
+            }
+        });
+    });
+
+    it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUser([USER]);
+
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
+            .query({
+                includes: 'user',
+                loggedUser: JSON.stringify(USER)
+            });
+
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
+            user: {
+                email: USER.email,
+                name: USER.name
+            }
+        });
+    });
+
+    it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUser([USER]);
+
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
+            .query({
+                includes: 'user',
+                loggedUser: JSON.stringify(MANAGER)
+            });
+
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
+            user: {
+                email: USER.email,
+                name: USER.name,
+            }
+        });
+    });
+
+    it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUser([USER]);
+
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
+            .query({
+                includes: 'user',
+                loggedUser: JSON.stringify(ADMIN)
+            });
+
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
+            user: {
+                email: USER.email,
+                name: USER.name,
+                role: USER.role
+            }
+        });
     });
 
     it('Getting layers by dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {

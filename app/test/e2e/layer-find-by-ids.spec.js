@@ -4,7 +4,7 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { createLayer } = require('./utils/helpers');
 
-const { getTestServer } = require('./test-server');
+const { getTestServer } = require('./utils/test-server');
 
 const should = chai.should();
 
