@@ -9,7 +9,7 @@ const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
-const USER_ROLES = require('app.constants').USER_ROLES;
+const { USER_ROLES } = require('app.constants');
 
 const router = new Router({});
 
@@ -32,7 +32,7 @@ class LayerRouter {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Getting layer with id: ${id}`);
         const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
-        const query = ctx.query;
+        const { query } = ctx;
         delete query.loggedUser;
         try {
             const layer = await LayerService.get(id, includes);
@@ -57,7 +57,7 @@ class LayerRouter {
     static async create(ctx) {
         logger.info(`[LayerRouter] Creating layer with name: ${ctx.request.body.name}`);
         try {
-            const dataset = ctx.params.dataset;
+            const { dataset } = ctx.params;
             const user = LayerRouter.getUser(ctx);
             const layer = await LayerService.create(ctx.request.body, dataset, user);
             ctx.set('cache-control', 'flush');
@@ -86,7 +86,7 @@ class LayerRouter {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
                 return;
-            } else if (err instanceof LayerDuplicated) {
+            } if (err instanceof LayerDuplicated) {
                 ctx.throw(400, err.message);
                 return;
             }
@@ -141,7 +141,7 @@ class LayerRouter {
 
     static async getAll(ctx) {
         logger.info(`[LayerRouter] Getting all layers`);
-        const query = ctx.query;
+        const { query } = ctx;
         const dataset = ctx.params.dataset || null;
         const userId = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser).id : null;
         delete query.loggedUser;
@@ -303,9 +303,7 @@ const authorizationMiddleware = async (ctx, next) => {
     }
     const application = ctx.request.query.application ? ctx.request.query.application : ctx.request.body.application;
     if (application) {
-        const appPermission = application.find(app =>
-            user.extraUserData.apps.find(userApp => userApp === app)
-        );
+        const appPermission = application.find(app => user.extraUserData.apps.find(userApp => userApp === app));
         if (!appPermission) {
             ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
             return;
