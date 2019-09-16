@@ -104,13 +104,39 @@ const createLayer = (apps = ['rw'], datasetID, layerId) => {
         applicationConfig: {},
         staticImageConfig: {},
         userId: '5858f37140621f11066fb2f7',
-        protected: false
+        protected: false,
+        createdAt: new Date(2018, 1, 1),
+        updatedAt: new Date(2018, 1, 1)
+
     };
+};
+
+const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) => {
+    receivedLayer.id.should.equal(createdLayer._id);
+    receivedLayer.type.should.equal('layer');
+    receivedLayer.should.have.property('attributes').and.instanceOf(Object);
+
+    delete createdLayer._id;
+    delete createdLayer.status;
+
+    createdLayer.interactionConfig = {};
+
+    const expectedLayer = {
+        ...createdLayer,
+        createdAt: createdLayer.createdAt.toISOString(),
+        updatedAt: createdLayer.updatedAt.toISOString(),
+        ...additionalData
+    };
+    // remove fields which are not present to user from response body;
+    delete expectedLayer._id;
+
+    receivedLayer.attributes.should.deep.equal(expectedLayer);
 };
 
 module.exports = {
     createLayer,
     createMockDataset,
     ensureCorrectError,
-    getUUID
+    getUUID,
+    ensureCorrectLayer
 };
