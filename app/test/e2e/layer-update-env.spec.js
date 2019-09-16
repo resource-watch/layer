@@ -60,8 +60,8 @@ describe('Layer env update', () => {
         expect(layer.env).to.be.equal('test');
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

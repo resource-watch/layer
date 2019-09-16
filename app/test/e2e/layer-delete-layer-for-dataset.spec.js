@@ -104,8 +104,8 @@ describe('Delete all layers for a dataset', async () => {
         expect(layers).to.be.length(0);
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

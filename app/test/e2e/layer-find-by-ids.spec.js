@@ -103,6 +103,9 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the listed layers', async () => {
+        layerOne = await new Layer(createLayer()).save();
+        layerTwo = await new Layer(createLayer()).save();
+
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .send({
@@ -146,6 +149,9 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the listed layers', async () => {
+        layerOne = await new Layer(createLayer()).save();
+        layerTwo = await new Layer(createLayer()).save();
+
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?ids=${layerTwo.dataset}`)
             .send({
@@ -172,13 +178,11 @@ describe('Find layers by IDs', () => {
         responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await Layer.remove({}).exec();
+
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-    });
-
-    after(() => {
-        Layer.remove({}).exec();
     });
 });

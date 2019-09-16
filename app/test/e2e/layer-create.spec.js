@@ -501,13 +501,11 @@ describe('Layer create tests', () => {
         createdLayer.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await Layer.remove({}).exec();
+
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-    });
-
-    after(() => {
-        Layer.remove({}).exec();
     });
 });
