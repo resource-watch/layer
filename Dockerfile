@@ -1,4 +1,4 @@
-FROM node:12.6-alpine
+FROM node:12.9-alpine
 MAINTAINER info@vizzuality.com
 
 ENV NAME layer
