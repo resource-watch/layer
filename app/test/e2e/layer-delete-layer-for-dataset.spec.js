@@ -2,9 +2,9 @@ const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
-const { getTestServer } = require('./test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils');
-const { ROLES } = require('./test.constants');
+const { getTestServer } = require('./utils/test-server');
+const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
+const { USERS } = require('./utils/test.constants');
 
 const should = chai.should();
 
@@ -48,19 +48,19 @@ describe('Delete all layers for a dataset', async () => {
     });
 
     it('Deleting all layers for a dataset while being authenticated as USER should return a 403 "Forbidden" error', async () => {
-        const response = await deleteLayers(ROLES.USER);
+        const response = await deleteLayers(USERS.USER);
         response.status.should.equal(403);
         ensureCorrectError(response.body, 'Forbidden');
     });
 
     it('Deleting all layers for a dataset while being authenticated as ADMIN should return a 403 "Forbidden" error', async () => {
-        const response = await deleteLayers(ROLES.ADMIN);
+        const response = await deleteLayers(USERS.ADMIN);
         response.status.should.equal(403);
         ensureCorrectError(response.body, 'Forbidden');
     });
 
     it('Deleting all layers for a dataset while being authenticated as MANAGER should return a 403 "Forbidden" error', async () => {
-        const response = await deleteLayers(ROLES.MANAGER);
+        const response = await deleteLayers(USERS.MANAGER);
         response.status.should.equal(403);
         ensureCorrectError(response.body, 'Forbidden');
     });
@@ -95,7 +95,7 @@ describe('Delete all layers for a dataset', async () => {
             });
 
         const datasetLayers = await requester
-            .delete(`/api/v1/dataset/123/layer?loggedUser=${JSON.stringify(ROLES.MICROSERVICE)}`)
+            .delete(`/api/v1/dataset/123/layer?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
             .send();
 
         datasetLayers.status.should.equal(200);
@@ -104,8 +104,8 @@ describe('Delete all layers for a dataset', async () => {
         expect(layers).to.be.length(0);
     });
 
-    afterEach(() => {
-        Layer.remove({}).exec();
+    afterEach(async () => {
+        await Layer.remove({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

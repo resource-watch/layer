@@ -13,7 +13,7 @@ const stage = process.env.NODE_ENV;
 class LayerService {
 
     static async getSlug(name) {
-        let valid = false;
+        const valid = false;
         let slugTemp = null;
         let i = 0;
         while (!valid) {
@@ -32,8 +32,8 @@ class LayerService {
     }
 
     static getFilteredQuery(query, ids = []) {
-        const collection = query.collection;
-        const favourite = query.favourite;
+        const { collection } = query;
+        const { favourite } = query;
         if (!query.application && query.app) {
             query.application = query.app;
             if (favourite) {
@@ -114,7 +114,7 @@ class LayerService {
         return filteredSort;
     }
 
-    static async get(id, includes) {
+    static async get(id, includes = null, user = null) {
         logger.debug(`[LayerService]: Getting layer with id: ${id}`);
         logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
         const layer = await Layer.findById(id).exec() || await Layer.findOne({
@@ -126,7 +126,7 @@ class LayerService {
         }
         if (includes && includes.length > 0) {
             logger.debug('Finding relationships');
-            const layers = await RelationshipsService.getRelationships([layer], includes);
+            const layers = await RelationshipsService.getRelationships([layer], includes, user);
             return layers[0];
         }
         return layer;
@@ -264,7 +264,7 @@ class LayerService {
             dataset: id
         }).exec();
         if (layers) {
-            for (let i = 0, length = layers.length; i < length; i++) {
+            for (let i = 0, { length } = layers; i < length; i++) {
                 const currentLayer = layers[i];
                 logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
                 await currentLayer.remove();
@@ -305,7 +305,7 @@ class LayerService {
         });
     }
 
-    static async getAll(query = {}, dataset = null) {
+    static async getAll(query = {}, dataset = null, user) {
         logger.debug(`[LayerService]: Getting all layers`);
         const sort = query.sort || '';
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
@@ -327,7 +327,7 @@ class LayerService {
         pages = Object.assign({}, pages);
         if (includes.length > 0) {
             logger.debug('Finding relationships');
-            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes);
+            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user);
         }
         return pages;
     }
@@ -360,9 +360,7 @@ class LayerService {
     static async hasPermission(id, user) {
         let permission = true;
         const layer = await LayerService.get(id);
-        const appPermission = layer.application.find(layerApp =>
-            user.extraUserData.apps.find(app => app === layerApp)
-        );
+        const appPermission = layer.application.find(layerApp => user.extraUserData.apps.find(app => app === layerApp));
         if (!appPermission) {
             permission = false;
         }

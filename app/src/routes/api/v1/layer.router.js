@@ -9,7 +9,7 @@ const LayerDuplicated = require('errors/layerDuplicated.error');
 const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
-const USER_ROLES = require('app.constants').USER_ROLES;
+const { USER_ROLES } = require('app.constants');
 
 const router = new Router({});
 
@@ -32,10 +32,11 @@ class LayerRouter {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Getting layer with id: ${id}`);
         const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
-        const query = ctx.query;
+        const { query } = ctx;
+        const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
         delete query.loggedUser;
         try {
-            const layer = await LayerService.get(id, includes);
+            const layer = await LayerService.get(id, includes, user);
             ctx.body = LayerSerializer.serialize(layer);
             const cache = [id, layer.slug];
             if (includes) {
@@ -57,7 +58,7 @@ class LayerRouter {
     static async create(ctx) {
         logger.info(`[LayerRouter] Creating layer with name: ${ctx.request.body.name}`);
         try {
-            const dataset = ctx.params.dataset;
+            const { dataset } = ctx.params;
             const user = LayerRouter.getUser(ctx);
             const layer = await LayerService.create(ctx.request.body, dataset, user);
             ctx.set('cache-control', 'flush');
@@ -86,7 +87,7 @@ class LayerRouter {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
                 return;
-            } else if (err instanceof LayerDuplicated) {
+            } if (err instanceof LayerDuplicated) {
                 ctx.throw(400, err.message);
                 return;
             }
@@ -141,9 +142,10 @@ class LayerRouter {
 
     static async getAll(ctx) {
         logger.info(`[LayerRouter] Getting all layers`);
-        const query = ctx.query;
+        const { query } = ctx;
         const dataset = ctx.params.dataset || null;
-        const userId = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser).id : null;
+        const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
+        const userId = user ? user.id : null;
         delete query.loggedUser;
         if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
             if (!userId) {
@@ -173,7 +175,7 @@ class LayerRouter {
         const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
         const apiVersion = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link = `${ctx.request.protocol}://${ctx.request.host}/${apiVersion}${ctx.request.path}${serializedQuery}`;
-        const layers = await LayerService.getAll(query, dataset);
+        const layers = await LayerService.getAll(query, dataset, user);
         ctx.body = LayerSerializer.serialize(layers, link);
 
         const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
@@ -303,9 +305,7 @@ const authorizationMiddleware = async (ctx, next) => {
     }
     const application = ctx.request.query.application ? ctx.request.query.application : ctx.request.body.application;
     if (application) {
-        const appPermission = application.find(app =>
-            user.extraUserData.apps.find(userApp => userApp === app)
-        );
+        const appPermission = application.find(app => user.extraUserData.apps.find(userApp => userApp === app));
         if (!appPermission) {
             ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
             return;

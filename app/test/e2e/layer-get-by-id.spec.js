@@ -1,7 +1,7 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
-const { createLayer, ensureCorrectLayer } = require('./utils/helpers');
+const { createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer } = require('./utils/helpers');
 const { createMockUser } = require('./utils/mocks');
 const { USERS: { USER, MANAGER, ADMIN } } = require('./utils/test.constants');
 
@@ -10,7 +10,7 @@ nock.enableNetConnect(process.env.HOST_IP);
 
 let requester;
 
-describe('Get layers', () => {
+describe('Get layers by id', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
@@ -19,18 +19,18 @@ describe('Get layers', () => {
         requester = await getTestServer();
     });
 
-    it('Getting layers should return result empty result when no layers exist', async () => {
-        const list = await requester.get('/api/v1/layer');
-        list.status.should.equal(200);
-        list.body.should.have.property('data').and.be.an('array').and.length(0);
+    it('Getting layers by id should return a 404 "Layer with id X doesn\'t exist" error when layer doesn\'t exist', async () => {
+        const layer = await requester.get(`/api/v1/layer/123`);
+        layer.status.should.equal(404);
+        ensureCorrectError(layer.body, 'Layer with id \'123\' doesn\'t exist');
     });
 
-    it('Getting layers should return a list of layers (happy case)', async () => {
+    it('Getting layers by id should return the layer when it exists (happy case)', async () => {
         const savedLayer = await new Layer(createLayer()).save();
 
-        const list = await requester.get('/api/v1/layer');
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        const layer = await requester.get(`/api/v1/layer/${savedLayer._id}`);
+        layer.status.should.equal(200);
+        ensureCorrectLayer(layer.body.data, savedLayer.toObject());
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
@@ -38,14 +38,14 @@ describe('Get layers', () => {
 
         createMockUser([USER]);
 
-        const list = await requester.get('/api/v1/layer')
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
             .query({
-                includes: 'user'
+                includes: 'user',
+                loggedUser: JSON.stringify(USER)
             });
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name
@@ -58,14 +58,14 @@ describe('Get layers', () => {
 
         createMockUser([USER]);
 
-        const list = await requester.get('/api/v1/layer')
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
             .query({
                 includes: 'user',
                 loggedUser: JSON.stringify(USER)
             });
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name
@@ -78,17 +78,17 @@ describe('Get layers', () => {
 
         createMockUser([USER]);
 
-        const list = await requester.get('/api/v1/layer')
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
             .query({
                 includes: 'user',
                 loggedUser: JSON.stringify(MANAGER)
             });
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
             user: {
                 email: USER.email,
-                name: USER.name
+                name: USER.name,
             }
         });
     });
@@ -98,20 +98,36 @@ describe('Get layers', () => {
 
         createMockUser([USER]);
 
-        const list = await requester.get('/api/v1/layer')
+        const list = await requester.get(`/api/v1/layer/${savedLayer._id}`)
             .query({
                 includes: 'user',
                 loggedUser: JSON.stringify(ADMIN)
             });
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        list.body.should.have.property('data');
+        ensureCorrectLayer(list.body.data, savedLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name,
                 role: USER.role
             }
         });
+    });
+
+    it('Getting layers by dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        const datasetLayers = await requester.get(`/api/v1/dataset/321/layer`);
+        datasetLayers.status.should.equal(404);
+        ensureCorrectError(datasetLayers.body, 'Dataset not found');
+    });
+
+    it('Getting layers by dataset should return the layers for specific dataset when dataset exists (happy case)', async () => {
+        createMockDataset('123');
+        const savedLayer = await new Layer(createLayer(['rw'], '123')).save();
+
+        const datasetLayers = await requester.get(`/api/v1/dataset/123/layer`);
+        datasetLayers.status.should.equal(200);
+        datasetLayers.body.should.have.property('data').and.be.an('array').and.length.above(0);
+        ensureCorrectLayer(datasetLayers.body.data[0], savedLayer.toObject());
     });
 
     afterEach(async () => {

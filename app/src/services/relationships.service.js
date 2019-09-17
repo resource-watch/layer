@@ -4,7 +4,7 @@ const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 
 class RelationshipsService {
 
-    static async getRelationships(layers, includes) {
+    static async getRelationships(layers, includes, user) {
         logger.info(`Getting relationships of layers: ${layers}`);
         for (let i = 0; i < layers.length; i++) {
             try {
@@ -17,7 +17,7 @@ class RelationshipsService {
                     layers[i].vocabulary = vocabularies.data;
                 }
                 if (includes.indexOf('user') > -1) {
-                    const user = await ctRegisterMicroservice.requestToMicroservice({
+                    const userData = await ctRegisterMicroservice.requestToMicroservice({
                         uri: `/auth/user/find-by-ids`,
                         method: 'POST',
                         json: true,
@@ -26,11 +26,20 @@ class RelationshipsService {
                         },
                         version: false
                     });
-                    layers[i].user = {
-                        name: user.data[0].name,
-                        email: user.data[0].email
-                    };
-                    logger.info('Layers', layers);
+
+                    if (!userData.data[0] || !userData.data[0].name || !userData.data[0].email) {
+                        logger.warn(`Tried to use find-by-ids to load info for user with id ${layers[i].userId} but the following was returned: ${JSON.stringify(user)}`);
+                    } else {
+                        layers[i].user = {
+                            name: userData.data[0].name,
+                            email: userData.data[0].email
+                        };
+                        if (user && user.role === 'ADMIN') {
+                            layers[i].user.role = userData.data[0].role;
+                        }
+
+                        logger.info('Layers including user data', layers.map(el => el.toObject()));
+                    }
                 }
             } catch (err) {
                 logger.error(err);
@@ -51,11 +60,7 @@ class RelationshipsService {
                 }
             });
             logger.debug(result);
-            return result.data.map(col => {
-                return col.attributes.resources.filter(res => res.type === 'layer');
-            }).reduce((pre, cur) => {
-                return pre.concat(cur);
-            }).map(el => el.id);
+            return result.data.map(col => col.attributes.resources.filter(res => res.type === 'layer')).reduce((pre, cur) => pre.concat(cur)).map(el => el.id);
         } catch (e) {
             throw new Error(e);
         }

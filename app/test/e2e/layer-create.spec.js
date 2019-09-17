@@ -2,8 +2,8 @@
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { ROLES } = require('./test.constants');
-const { getTestServer } = require('./test-server');
+const { USERS } = require('./utils/test.constants');
+const { getTestServer } = require('./utils/test-server');
 
 const should = chai.should();
 
@@ -269,7 +269,7 @@ describe('Layer create tests', () => {
             .post(`/api/v1/dataset/${timestamp}/layer`)
             .send({
                 layer,
-                loggedUser: ROLES.ADMIN
+                loggedUser: USERS.ADMIN
             });
 
         response.status.should.equal(200);
@@ -297,7 +297,7 @@ describe('Layer create tests', () => {
         const layer = {
             name: `Carto DB Layer - ${timestamp}`,
             application: ['rw'],
-            loggedUser: ROLES.ADMIN
+            loggedUser: USERS.ADMIN
         };
 
         nock(process.env.CT_URL)
@@ -501,13 +501,11 @@ describe('Layer create tests', () => {
         createdLayer.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await Layer.remove({}).exec();
+
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-    });
-
-    after(() => {
-        Layer.remove({}).exec();
     });
 });
