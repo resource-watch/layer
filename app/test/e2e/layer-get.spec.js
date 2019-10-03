@@ -1,9 +1,12 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
+const chai = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer, ensureCorrectLayer } = require('./utils/helpers');
-const { createMockUser } = require('./utils/mocks');
-const { USERS: { USER, MANAGER, ADMIN } } = require('./utils/test.constants');
+const { createMockUser, createMockUserRole } = require('./utils/mocks');
+const { USERS: { USER, MANAGER, ADMIN, SUPERADMIN } } = require('./utils/test.constants');
+
+const should = chai.should();
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -30,6 +33,62 @@ describe('Get layers', () => {
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+    });
+
+    it('Getting layers with query params user.role ADMIN should return a list of layers created by ADMIN (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+        await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUserRole('ADMIN', ADMIN.id);
+
+        const list = await requester.get('/api/v1/layer').query({ 'user.role': 'ADMIN', loggedUser: JSON.stringify(ADMIN) });
+
+        list.body.should.have.property('data').and.be.an('array').and.length(1);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+    });
+
+    it('Getting layers with query params user.role MANAGER should return a list of layers created by MANAGER (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer(null, null, null, USER.id)).save();
+
+        createMockUserRole('MANAGER', MANAGER.id);
+
+        const list = await requester.get('/api/v1/layer').query({ 'user.role': 'MANAGER', loggedUser: JSON.stringify(SUPERADMIN) });
+
+        list.body.should.have.property('data').and.be.an('array').and.length(1);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+    });
+
+    it('Getting layers with query params user.role USER should return a list of layers created by USER (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+
+        createMockUserRole('USER', USER.id);
+
+        const list = await requester.get('/api/v1/layer').query({ 'user.role': 'USER', loggedUser: JSON.stringify(ADMIN) });
+
+        list.body.should.have.property('data').and.be.an('array').and.length(1);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+    });
+
+    it('Getting layers with query params user.role USER and with being authenticated as USER should return a list of layers (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+
+        const list = await requester.get('/api/v1/layer').query({ 'user.role': 'USER', loggedUser: USER });
+
+        list.body.should.have.property('data').and.be.an('array').and.length(2);
+        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+    });
+
+    it('Getting layers with query params user.role USER and with being authenticated as MANAGER should return a list of layers (happy case)', async () => {
+        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+
+        const list = await requester.get('/api/v1/layer').query({ 'user.role': 'USER', loggedUser: USER });
+
+        list.body.should.have.property('data').and.be.an('array').and.length(2);
         ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
     });
 

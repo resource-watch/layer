@@ -48,9 +48,9 @@ class LayerService {
         // }
         const layerAttributes = Object.keys(Layer.schema.paths);
         Object.keys(query).forEach((param) => {
-            if (layerAttributes.indexOf(param) < 0) {
+            if (layerAttributes.indexOf(param) < 0 && param !== 'usersRole') {
                 delete query[param];
-            } else if (param !== 'env') {
+            } else if (!['env', 'usersRole'].includes(param)) {
                 switch (Layer.schema.paths[param].instance) {
 
                     case 'String':
@@ -80,6 +80,12 @@ class LayerService {
                         query[param] = query[param];
 
                 }
+            } else if (param === 'usersRole') {
+                logger.debug('Params users roles');
+                query.userId = Object.assign({}, query.userId || {}, {
+                    $in: query[param]
+                });
+                delete query.usersRole;
             } else if (param === 'env') {
                 query[param] = {
                     $in: query[param].split(',')

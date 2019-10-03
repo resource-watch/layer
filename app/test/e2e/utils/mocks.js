@@ -8,6 +8,11 @@ const createMockUser = mockUser => nock(process.env.CT_URL)
         data: mockUser
     });
 
+const createMockUserRole = (role, userID) => nock(process.env.CT_URL)
+    .get(`/auth/user/ids/${role}`)
+    .reply(200, { data: [userID] });
+
 module.exports = {
     createMockUser,
+    createMockUserRole
 };
