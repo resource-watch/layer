@@ -38,7 +38,7 @@ class RelationshipsService {
                             layers[i].user.role = userData.data[0].role;
                         }
 
-                        logger.info('Layers including user data', layers.map(el => el.toObject()));
+                        logger.info('Layers including user data', layers.map((el) => el.toObject()));
                     }
                 }
             } catch (err) {
@@ -46,6 +46,17 @@ class RelationshipsService {
             }
         }
         return layers;
+    }
+
+    static async getUsersWithRole(role) {
+        const body = await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/auth/user/ids/${role}`,
+            method: 'GET',
+            json: true,
+            version: false
+        });
+        logger.debug('User ids', body.data);
+        return body.data;
     }
 
     static async getCollections(ids, userId) {
@@ -60,7 +71,7 @@ class RelationshipsService {
                 }
             });
             logger.debug(result);
-            return result.data.map(col => col.attributes.resources.filter(res => res.type === 'layer')).reduce((pre, cur) => pre.concat(cur)).map(el => el.id);
+            return result.data.map((col) => col.attributes.resources.filter((res) => res.type === 'layer')).reduce((pre, cur) => pre.concat(cur)).map((el) => el.id);
         } catch (e) {
             throw new Error(e);
         }
@@ -78,7 +89,7 @@ class RelationshipsService {
                 }
             });
             logger.debug(result);
-            return result.data.filter(fav => fav.attributes.resourceType === 'layer').map(el => el.attributes.resourceId);
+            return result.data.filter((fav) => fav.attributes.resourceType === 'layer').map((el) => el.attributes.resourceId);
         } catch (e) {
             throw new Error(e);
         }

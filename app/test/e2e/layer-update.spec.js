@@ -103,7 +103,7 @@ describe('Layer update', () => {
             interactionConfig: { test: true },
             applicationConfig: { test: true },
             staticImageConfig: { test: true }
-        }
+        };
 
         const datasetId = getUUID();
         const layerId = getUUID();
@@ -128,7 +128,7 @@ describe('Layer update', () => {
         const responseData = datasetLayer.body.data;
 
         Object.keys(LAYER_TO_UPDATE)
-            .map(field => responseData.attributes[field].should.deep.equal(LAYER_TO_UPDATE[field]));
+            .map((field) => responseData.attributes[field].should.deep.equal(LAYER_TO_UPDATE[field]));
     });
 
     afterEach(async () => {

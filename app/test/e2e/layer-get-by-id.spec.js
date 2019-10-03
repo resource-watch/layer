@@ -1,7 +1,9 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
-const { createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer } = require('./utils/helpers');
+const {
+    createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer
+} = require('./utils/helpers');
 const { createMockUser } = require('./utils/mocks');
 const { USERS: { USER, MANAGER, ADMIN } } = require('./utils/test.constants');
 
