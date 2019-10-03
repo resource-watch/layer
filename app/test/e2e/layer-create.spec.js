@@ -59,7 +59,9 @@ describe('Layer create tests', () => {
                         env: 'production',
                         geoInfo: false,
                         protected: false,
-                        legend: { date: [], region: [], country: [], nested: [] },
+                        legend: {
+                            date: [], region: [], country: [], nested: []
+                        },
                         clonedHost: {},
                         errorMessage: null,
                         taskId: null,
@@ -116,7 +118,9 @@ describe('Layer create tests', () => {
                         env: 'production',
                         geoInfo: false,
                         protected: false,
-                        legend: { date: [], region: [], country: [], nested: [] },
+                        legend: {
+                            date: [], region: [], country: [], nested: []
+                        },
                         clonedHost: {},
                         errorMessage: null,
                         taskId: null,
@@ -328,7 +332,9 @@ describe('Layer create tests', () => {
                         env: 'production',
                         geoInfo: false,
                         protected: false,
-                        legend: { date: [], region: [], country: [], nested: [] },
+                        legend: {
+                            date: [], region: [], country: [], nested: []
+                        },
                         clonedHost: {},
                         errorMessage: null,
                         taskId: null,

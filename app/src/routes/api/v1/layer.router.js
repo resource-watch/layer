@@ -13,7 +13,7 @@ const { USER_ROLES } = require('app.constants');
 
 const router = new Router({});
 
-const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
+const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
     return a;
 }, []).join('&');
@@ -21,7 +21,7 @@ const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
 class LayerRouter {
 
     static getUser(ctx) {
-        let user = Object.assign({}, ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}, ctx.request.body.loggedUser);
+        let user = { ...(ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}), ...ctx.request.body.loggedUser };
         if (ctx.request.body.fields) {
             user = Object.assign(user, JSON.parse(ctx.request.body.fields.loggedUser));
         }
@@ -31,7 +31,7 @@ class LayerRouter {
     static async get(ctx) {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Getting layer with id: ${id}`);
-        const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
+        const includes = ctx.query.includes ? ctx.query.includes.split(',').map((elem) => elem.trim()) : [];
         const { query } = ctx;
         const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
         delete query.loggedUser;
@@ -149,7 +149,7 @@ class LayerRouter {
         const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(user && user.role);
 
         delete query.loggedUser;
-        if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
+        if (Object.keys(query).find((el) => el.indexOf('collection') >= 0)) {
             if (!userId) {
                 ctx.throw(403, 'Collection filter not authorized');
                 return;
@@ -159,12 +159,12 @@ class LayerRouter {
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
-        if (Object.keys(query).find(el => el.indexOf('user.role') >= 0) && isAdmin) {
+        if (Object.keys(query).find((el) => el.indexOf('user.role') >= 0) && isAdmin) {
             logger.debug('Obtaining users with role');
             ctx.query.usersRole = await RelationshipsService.getUsersWithRole(ctx.query['user.role']);
             logger.debug('Ids from users with role', ctx.query.usersRole);
         }
-        if (Object.keys(query).find(el => el.indexOf('favourite') >= 0)) {
+        if (Object.keys(query).find((el) => el.indexOf('favourite') >= 0)) {
             if (!userId) {
                 ctx.throw(403, 'Fav filter not authorized');
                 return;
@@ -175,7 +175,7 @@ class LayerRouter {
             logger.debug('Ids from collections', ctx.query.ids);
         }
         // Links creation
-        const clonedQuery = Object.assign({}, query);
+        const clonedQuery = { ...query };
         delete clonedQuery['page[size]'];
         delete clonedQuery['page[number]'];
         delete clonedQuery.ids;
@@ -185,7 +185,7 @@ class LayerRouter {
         const layers = await LayerService.getAll(query, dataset, user);
         ctx.body = LayerSerializer.serialize(layers, link);
 
-        const includes = ctx.query.includes ? ctx.query.includes.split(',').map(elem => elem.trim()) : [];
+        const includes = ctx.query.includes ? ctx.query.includes.split(',').map((elem) => elem.trim()) : [];
         const cache = ['layer'];
         if (ctx.params.dataset) {
             cache.push(`${ctx.params.dataset}-layer-all`);
@@ -215,7 +215,7 @@ class LayerRouter {
             app: ctx.request.body.app
         };
         if (typeof resource.ids === 'string') {
-            resource.ids = resource.ids.split(',').map(elem => elem.trim());
+            resource.ids = resource.ids.split(',').map((elem) => elem.trim());
         }
         const result = await LayerService.getByDataset(resource);
         ctx.body = LayerSerializer.serialize(result, null, true);
@@ -312,7 +312,7 @@ const authorizationMiddleware = async (ctx, next) => {
     }
     const application = ctx.request.query.application ? ctx.request.query.application : ctx.request.body.application;
     if (application) {
-        const appPermission = application.find(app => user.extraUserData.apps.find(userApp => userApp === app));
+        const appPermission = application.find((app) => user.extraUserData.apps.find((userApp) => userApp === app));
         if (!appPermission) {
             ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
             return;

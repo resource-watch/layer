@@ -33,12 +33,12 @@ class LayerSerializer {
         const result = {};
         if (data) {
             if (data.docs) {
-                result.data = data.docs.map(el => LayerSerializer.serializeElement(el));
+                result.data = data.docs.map((el) => LayerSerializer.serializeElement(el));
             } else if (Array.isArray(data)) {
                 if (data.length === 1 && !forceArray) {
                     result.data = LayerSerializer.serializeElement(data[0]);
                 } else {
-                    result.data = data.map(el => LayerSerializer.serializeElement(el));
+                    result.data = data.map((el) => LayerSerializer.serializeElement(el));
                 }
             } else {
                 result.data = LayerSerializer.serializeElement(data);

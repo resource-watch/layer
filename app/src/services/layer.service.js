@@ -62,11 +62,11 @@ class LayerService {
                     case 'Array':
                         if (query[param].indexOf('@') >= 0) {
                             query[param] = {
-                                $all: query[param].split('@').map(elem => elem.trim())
+                                $all: query[param].split('@').map((elem) => elem.trim())
                             };
                         } else {
                             query[param] = {
-                                $in: query[param].split(',').map(elem => elem.trim())
+                                $in: query[param].split(',').map((elem) => elem.trim())
                             };
                         }
                         break;
@@ -82,9 +82,7 @@ class LayerService {
                 }
             } else if (param === 'usersRole') {
                 logger.debug('Params users roles');
-                query.userId = Object.assign({}, query.userId || {}, {
-                    $in: query[param]
-                });
+                query.userId = { ...query.userId || {}, $in: query[param] };
                 delete query.usersRole;
             } else if (param === 'env') {
                 query[param] = {
@@ -316,12 +314,12 @@ class LayerService {
         const sort = query.sort || '';
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
-        const ids = query.ids ? query.ids.split(',').map(elem => elem.trim()) : [];
-        const includes = query.includes ? query.includes.split(',').map(elem => elem.trim()) : [];
+        const ids = query.ids ? query.ids.split(',').map((elem) => elem.trim()) : [];
+        const includes = query.includes ? query.includes.split(',').map((elem) => elem.trim()) : [];
         if (dataset) {
             query.dataset = dataset;
         }
-        const filteredQuery = LayerService.getFilteredQuery(Object.assign({}, query), ids);
+        const filteredQuery = LayerService.getFilteredQuery({ ...query }, ids);
         const filteredSort = LayerService.getFilteredSort(sort);
         const options = {
             page,
@@ -330,7 +328,7 @@ class LayerService {
         };
         logger.info(`[DBACCESS-FIND]: layer`);
         let pages = await Layer.paginate(filteredQuery, options);
-        pages = Object.assign({}, pages);
+        pages = { ...pages };
         if (includes.length > 0) {
             logger.debug('Finding relationships');
             pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user);
@@ -343,11 +341,11 @@ class LayerService {
         if (resource.app) {
             if (resource.app.indexOf('@') >= 0) {
                 resource.app = {
-                    $all: resource.app.split('@').map(elem => elem.trim())
+                    $all: resource.app.split('@').map((elem) => elem.trim())
                 };
             } else {
                 resource.app = {
-                    $in: resource.app.split(',').map(elem => elem.trim())
+                    $in: resource.app.split(',').map((elem) => elem.trim())
                 };
             }
         }
@@ -366,7 +364,7 @@ class LayerService {
     static async hasPermission(id, user) {
         let permission = true;
         const layer = await LayerService.get(id);
-        const appPermission = layer.application.find(layerApp => user.extraUserData.apps.find(app => app === layerApp));
+        const appPermission = layer.application.find((layerApp) => user.extraUserData.apps.find((app) => app === layerApp));
         if (!appPermission) {
             permission = false;
         }
