@@ -4,7 +4,11 @@ const chai = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer, ensureCorrectLayer } = require('./utils/helpers');
 const { createMockUser, createMockUserRole } = require('./utils/mocks');
-const { USERS: { USER, MANAGER, ADMIN, SUPERADMIN } } = require('./utils/test.constants');
+const {
+    USERS: {
+        USER, MANAGER, ADMIN, SUPERADMIN
+    }
+} = require('./utils/test.constants');
 
 const should = chai.should();
 

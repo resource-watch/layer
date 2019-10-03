@@ -6,7 +6,7 @@ const { URL } = require('url');
 class LayerValidator {
 
     static getUser(ctx) {
-        return Object.assign({}, ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}, ctx.request.body.loggedUser);
+        return { ...(ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}), ...ctx.request.body.loggedUser };
     }
 
     static isString(property) {
@@ -93,30 +93,30 @@ class LayerValidator {
 
     static async validateCreation(koaObj) {
         logger.info('Validating Layer Creation');
-        koaObj.checkBody('name').notEmpty().check(name => LayerValidator.notEmptyString(name), 'can not be empty');
-        koaObj.checkBody('application').notEmpty().check(application => LayerValidator.notEmptyArray(application), 'must be a non-empty array');
-        koaObj.checkBody('description').optional().check(description => LayerValidator.isString(description), 'must be a string');
-        koaObj.checkBody('iso').optional().check(iso => LayerValidator.isArray(iso), 'must be an array');
+        koaObj.checkBody('name').notEmpty().check((name) => LayerValidator.notEmptyString(name), 'can not be empty');
+        koaObj.checkBody('application').notEmpty().check((application) => LayerValidator.notEmptyArray(application), 'must be a non-empty array');
+        koaObj.checkBody('description').optional().check((description) => LayerValidator.isString(description), 'must be a string');
+        koaObj.checkBody('iso').optional().check((iso) => LayerValidator.isArray(iso), 'must be an array');
         // connectorType
         koaObj.checkBody('provider').optional()
-            .check(provider => LayerValidator.isString(provider), 'must be a string')
+            .check((provider) => LayerValidator.isString(provider), 'must be a string')
             .toLow();
         // provider
         koaObj.checkBody('type').optional()
-            .check(type => LayerValidator.isString(type, koaObj), 'must be a string')
+            .check((type) => LayerValidator.isString(type, koaObj), 'must be a string')
             .toLow();
         // env
         koaObj.checkBody('env').optional()
             .toLow()
-            .check(type => LayerValidator.isString(type, koaObj), 'must be a string');
+            .check((type) => LayerValidator.isString(type, koaObj), 'must be a string');
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
         koaObj.checkBody('published').optional().toBoolean();
-        koaObj.checkBody('layerConfig').optional().check(layerConfig => LayerValidator.isObject(layerConfig), 'must be an object');
-        koaObj.checkBody('legendConfig').optional().check(legendConfig => LayerValidator.isObject(legendConfig), 'must be an object');
-        koaObj.checkBody('interactionConfig').optional().check(interactionConfig => LayerValidator.isObject(interactionConfig), 'must be an object');
-        koaObj.checkBody('applicationConfig').optional().check(applicationConfig => LayerValidator.isObject(applicationConfig), 'must be an object');
-        koaObj.checkBody('staticImageConfig').optional().check(staticImageConfig => LayerValidator.isObject(staticImageConfig), 'must be an object');
+        koaObj.checkBody('layerConfig').optional().check((layerConfig) => LayerValidator.isObject(layerConfig), 'must be an object');
+        koaObj.checkBody('legendConfig').optional().check((legendConfig) => LayerValidator.isObject(legendConfig), 'must be an object');
+        koaObj.checkBody('interactionConfig').optional().check((interactionConfig) => LayerValidator.isObject(interactionConfig), 'must be an object');
+        koaObj.checkBody('applicationConfig').optional().check((applicationConfig) => LayerValidator.isObject(applicationConfig), 'must be an object');
+        koaObj.checkBody('staticImageConfig').optional().check((staticImageConfig) => LayerValidator.isObject(staticImageConfig), 'must be an object');
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
             throw new LayerNotValid(koaObj.errors);
@@ -126,27 +126,27 @@ class LayerValidator {
 
     static async validateUpdate(koaObj) {
         logger.info('Validating Layer Update');
-        koaObj.checkBody('name').optional().check(name => LayerValidator.notEmptyString(name), 'can not be empty');
-        koaObj.checkBody('application').optional().check(application => LayerValidator.notEmptyArray(application), 'must be a non-empty array');
-        koaObj.checkBody('description').optional().check(description => LayerValidator.isString(description), 'must be a string');
-        koaObj.checkBody('iso').optional().check(iso => LayerValidator.isArray(iso), 'must be an array');
+        koaObj.checkBody('name').optional().check((name) => LayerValidator.notEmptyString(name), 'can not be empty');
+        koaObj.checkBody('application').optional().check((application) => LayerValidator.notEmptyArray(application), 'must be a non-empty array');
+        koaObj.checkBody('description').optional().check((description) => LayerValidator.isString(description), 'must be a string');
+        koaObj.checkBody('iso').optional().check((iso) => LayerValidator.isArray(iso), 'must be an array');
         // connectorType
         koaObj.checkBody('provider').optional()
-            .check(provider => LayerValidator.isString(provider), 'must be a string').toLow();
+            .check((provider) => LayerValidator.isString(provider), 'must be a string').toLow();
         // provider
         koaObj.checkBody('type').optional()
-            .check(type => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
+            .check((type) => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
         // env
         koaObj.checkBody('env').optional()
-            .check(type => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
+            .check((type) => LayerValidator.isString(type, koaObj), 'must be a string').toLow();
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
         koaObj.checkBody('published').optional().toBoolean();
-        koaObj.checkBody('layerConfig').optional().check(layerConfig => LayerValidator.isObject(layerConfig), 'must be an object');
-        koaObj.checkBody('legendConfig').optional().check(legendConfig => LayerValidator.isObject(legendConfig), 'must be an object');
-        koaObj.checkBody('interactionConfig').optional().check(interactionConfig => LayerValidator.isObject(interactionConfig), 'must be an object');
-        koaObj.checkBody('applicationConfig').optional().check(applicationConfig => LayerValidator.isObject(applicationConfig), 'must be an object');
-        koaObj.checkBody('staticImageConfig').optional().check(staticImageConfig => LayerValidator.isObject(staticImageConfig), 'must be an object');
+        koaObj.checkBody('layerConfig').optional().check((layerConfig) => LayerValidator.isObject(layerConfig), 'must be an object');
+        koaObj.checkBody('legendConfig').optional().check((legendConfig) => LayerValidator.isObject(legendConfig), 'must be an object');
+        koaObj.checkBody('interactionConfig').optional().check((interactionConfig) => LayerValidator.isObject(interactionConfig), 'must be an object');
+        koaObj.checkBody('applicationConfig').optional().check((applicationConfig) => LayerValidator.isObject(applicationConfig), 'must be an object');
+        koaObj.checkBody('staticImageConfig').optional().check((staticImageConfig) => LayerValidator.isObject(staticImageConfig), 'must be an object');
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
             throw new LayerNotValid(koaObj.errors);
