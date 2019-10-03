@@ -146,6 +146,8 @@ class LayerRouter {
         const dataset = ctx.params.dataset || null;
         const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
         const userId = user ? user.id : null;
+        const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(user && user.role);
+
         delete query.loggedUser;
         if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
             if (!userId) {
@@ -156,6 +158,11 @@ class LayerRouter {
             ctx.query.ids = await RelationshipsService.getCollections(ctx.query.collection, userId);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
+        }
+        if (Object.keys(query).find(el => el.indexOf('user.role') >= 0) && isAdmin) {
+            logger.debug('Obtaining users with role');
+            ctx.query.usersRole = await RelationshipsService.getUsersWithRole(ctx.query['user.role']);
+            logger.debug('Ids from users with role', ctx.query.usersRole);
         }
         if (Object.keys(query).find(el => el.indexOf('favourite') >= 0)) {
             if (!userId) {
