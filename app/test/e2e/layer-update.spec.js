@@ -97,6 +97,7 @@ describe('Layer update', () => {
             iso: ['123'],
             provider: 'test prodiver',
             default: true,
+            env: 'staging',
             published: true,
             layerConfig: { test: true },
             legendConfig: { test: true },
