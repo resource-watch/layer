@@ -22,4 +22,3 @@ services:
     command: --smallfiles
     ports:
       - "27017"
-    restart: always

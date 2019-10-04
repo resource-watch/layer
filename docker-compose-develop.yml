@@ -27,4 +27,3 @@ services:
       - "27017"
     volumes:
       - $HOME/docker/data/layer:/data/db
-    restart: always
