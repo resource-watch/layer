@@ -49,6 +49,40 @@ describe('Delete single layer by id', async () => {
         ensureCorrectError(datasetLayer.body, 'Forbidden');
     });
 
+    it('Deleting a single layer by id while being authenticated as MANAGER that does not own the layer should return a 403 "Forbidden" error', async () => {
+        const datasetLayer = await deleteLayer(USERS.MANAGER, '123');
+        datasetLayer.status.should.equal(403);
+        ensureCorrectError(datasetLayer.body, 'Forbidden');
+    });
+
+    it('Deleting a single layer by id while being authenticated as MANAGER that owns the layer should delete the specific layer in specific dataset (happy case)', async () => {
+        createMockDataset('123');
+        const layer = createLayer(['rw'], '123', '123', USERS.MANAGER.id);
+        await new Layer(layer).save();
+
+        const datasetLayer = await requester
+            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.MANAGER)}`)
+            .send();
+
+
+        datasetLayer.status.should.equal(200);
+        datasetLayer.body.data.id.should.equal(layer._id);
+        datasetLayer.body.data.type.should.equal('layer');
+        const { attributes } = datasetLayer.body.data;
+
+        delete layer._id;
+        delete layer.status;
+
+        layer.interactionConfig = attributes.interactionConfig;
+        layer.createdAt = attributes.createdAt;
+        layer.updatedAt = attributes.updatedAt;
+
+        attributes.should.deep.equal(layer);
+
+        const layers = await Layer.find({});
+        expect(layers).to.be.length(0);
+    });
+
     it('Deleting a single layer by id should return 404 "Layer with id X not found" error when the layer doesn\'t exist', async () => {
         createMockDataset('123');
         const layer = createLayer(['rw'], '123', '321');
