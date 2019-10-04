@@ -189,6 +189,7 @@ class LayerService {
         currentLayer.description = layer.description || currentLayer.description;
         currentLayer.application = layer.application || currentLayer.application;
         currentLayer.iso = layer.iso || currentLayer.iso;
+        currentLayer.env = layer.env || currentLayer.env;
         currentLayer.provider = layer.provider || currentLayer.provider;
         currentLayer.type = layer.type || currentLayer.type;
         currentLayer.provider = layer.provider || currentLayer.provider;
