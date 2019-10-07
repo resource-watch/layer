@@ -102,7 +102,7 @@ describe('Find layers by IDs', () => {
         responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    it('Find layers with id list containing layers that exist returns the listed layers', async () => {
+    it('Find layers with id list containing layers that exist returns the listed layers (multiple results)', async () => {
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
@@ -148,12 +148,42 @@ describe('Find layers by IDs', () => {
         responseLayerTwo.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    it('Find layers with id list containing layers that exist returns the listed layers', async () => {
+    it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'ids\'', async () => {
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?ids=${layerTwo.dataset}`)
+            .send({
+                ids: [layerOne.dataset]
+            });
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(1);
+
+        const responseLayerOne = response.body.data[0].attributes;
+
+        responseLayerOne.should.have.property('name').and.equal(layerOne.name);
+        responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
+        responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
+        responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
+        responseLayerOne.should.have.property('protected').and.equal(false);
+        responseLayerOne.should.have.property('default').and.equal(true);
+        responseLayerOne.should.have.property('published').and.equal(true);
+
+        responseLayerOne.layerConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.legendConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.applicationConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
+    });
+
+    it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'user.role\'', async () => {
+        layerOne = await new Layer(createLayer()).save();
+        layerTwo = await new Layer(createLayer()).save();
+
+        const response = await requester
+            .post(`/api/v1/layer/find-by-ids?user.role=FAKE`)
             .send({
                 ids: [layerOne.dataset]
             });
