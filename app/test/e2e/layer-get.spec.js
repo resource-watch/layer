@@ -192,6 +192,81 @@ describe('Get layers', () => {
         });
     });
 
+    it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role, even if only partial data exists', async () => {
+        const savedLayerOne = await new Layer(createLayer()).save();
+        const savedLayerTwo = await new Layer(createLayer()).save();
+        const savedLayerThree = await new Layer(createLayer()).save();
+
+        createMockUser([{
+            id: savedLayerOne.userId,
+            role: 'USER',
+            provider: 'local',
+            email: 'user-one@control-tower.org',
+            name: 'test user',
+            extraUserData: {
+                apps: [
+                    'rw',
+                    'gfw',
+                    'gfw-climate',
+                    'prep',
+                    'aqueduct',
+                    'forest-atlas'
+                ]
+            }
+        }]);
+
+        createMockUser([{
+            id: savedLayerTwo.userId,
+            role: 'MANAGER',
+            provider: 'local',
+            email: 'user-two@control-tower.org',
+            extraUserData: {
+                apps: [
+                    'rw'
+                ]
+            }
+        }]);
+
+        createMockUser([{
+            id: savedLayerThree.userId,
+            role: 'MANAGER',
+            provider: 'local',
+            name: 'user three',
+            extraUserData: {
+                apps: [
+                    'rw'
+                ]
+            }
+        }]);
+
+        const list = await requester.get('/api/v1/layer')
+            .query({
+                includes: 'user',
+                loggedUser: JSON.stringify(ADMIN)
+            });
+
+        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerOne.id), savedLayerOne.toObject(), {
+            user: {
+                email: 'user-one@control-tower.org',
+                name: 'test user',
+                role: 'USER'
+            }
+        });
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerTwo.id), savedLayerTwo.toObject(), {
+            user: {
+                email: 'user-two@control-tower.org',
+                role: 'MANAGER'
+            }
+        });
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerThree.id), savedLayerThree.toObject(), {
+            user: {
+                name: 'user three',
+                role: 'MANAGER'
+            }
+        });
+    });
+
     afterEach(async () => {
         await Layer.remove({}).exec();
 
