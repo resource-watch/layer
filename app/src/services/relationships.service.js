@@ -27,7 +27,7 @@ class RelationshipsService {
                         version: false
                     });
 
-                    if (!userData.data[0] || !userData.data[0].name || !userData.data[0].email) {
+                    if (!userData.data[0] || (!userData.data[0].name && !userData.data[0].email)) {
                         logger.warn(`Tried to use find-by-ids to load info for user with id ${layers[i].userId} but the following was returned: ${JSON.stringify(user)}`);
                     } else {
                         layers[i].user = {
