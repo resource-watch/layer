@@ -28,6 +28,7 @@ class ErrorSerializer {
     static serializeValidationBodyErrors(data) {
         const errors = [];
         if (data) {
+            // eslint-disable-next-line no-plusplus
             for (let i = 0, { length } = data; i < length; i++) {
                 errors.push(ErrorSerializer.serializeValidationError(data[i], 'body'));
             }

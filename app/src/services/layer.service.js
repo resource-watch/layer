@@ -21,14 +21,16 @@ class LayerService {
             if (i > 0) {
                 slugTemp += `_${i}`;
             }
+            // eslint-disable-next-line no-await-in-loop
             const currentDataset = await Layer.findOne({
                 slug: slugTemp
             }).exec();
             if (!currentDataset) {
                 return slugTemp;
             }
-            i++;
+            i += 1;
         }
+        return name;
     }
 
     static getFilteredQuery(query, ids = []) {
@@ -73,11 +75,8 @@ class LayerService {
                     case 'Mixed':
                         query[param] = { $ne: null };
                         break;
-                    case 'Date':
-                        query[param] = query[param];
-                        break;
                     default:
-                        query[param] = query[param];
+                        break;
 
                 }
             } else if (param === 'usersRole') {
@@ -269,22 +268,27 @@ class LayerService {
             dataset: id
         }).exec();
         if (layers) {
+            // eslint-disable-next-line no-plusplus
             for (let i = 0, { length } = layers; i < length; i++) {
                 const currentLayer = layers[i];
                 logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
+                // eslint-disable-next-line no-await-in-loop
                 await currentLayer.remove();
                 logger.debug('[LayerService]: Deleting in graph');
                 try {
+                    // eslint-disable-next-line no-await-in-loop
                     await GraphService.deleteLayer(id);
                 } catch (err) {
                     logger.error('Error removing layer of the graph', err);
                 }
                 try {
+                    // eslint-disable-next-line no-await-in-loop
                     await LayerService.deleteMetadata(id, currentLayer._id);
                 } catch (err) {
                     logger.error('Error removing metadata of the layer', err);
                 }
                 try {
+                    // eslint-disable-next-line no-await-in-loop
                     await LayerService.expireCacheTiles(id, currentLayer._id);
                 } catch (err) {
                     logger.error('Error expiring cache', err);

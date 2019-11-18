@@ -31,6 +31,7 @@
     "eslint-config-airbnb": "^18.0.1",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-mocha": "^6.2.1",
     "eslint-plugin-react": "^7.14.3",
     "grunt": "^1.0.4",
     "grunt-cli": "^1.3.2",
@@ -40,6 +41,8 @@
     "grunt-express-server": "^0.5.4",
     "grunt-mocha-test": "^0.13.3",
     "grunt-simple-nyc": "^3.0.0",
+    "husky": ">=1",
+    "lint-staged": ">=8",
     "load-grunt-tasks": "^5.1.0",
     "mocha": "^6.2.0",
     "nock": "^10.0.6",
@@ -48,9 +51,8 @@
   "dependencies": {
     "bunyan": "^1.8.12",
     "config": "^3.2.2",
-    "sd-ct-register-microservice-node": "^2.1.7",
-    "koa-body": "^4.1.1",
     "koa": "^2.8.1",
+    "koa-body": "^4.1.1",
     "koa-convert": "^1.2.0",
     "koa-logger": "^3.2.1",
     "koa-mount": "^4.0.0",
@@ -58,7 +60,19 @@
     "koa-validate": "^1.0.7",
     "mongoose": "^5.7.1",
     "mongoose-paginate": "^5.0.3",
+    "sd-ct-register-microservice-node": "^2.1.7",
     "slug": "^1.1.0",
     "uuid": "^3.3.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }

@@ -10,7 +10,7 @@ const {
     }
 } = require('./utils/test.constants');
 
-const should = chai.should();
+chai.should();
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

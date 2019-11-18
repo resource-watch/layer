@@ -12,6 +12,7 @@ const layerConfig = {
                 type: 'mapnik',
                 options: {
                     sql: 'SELECT * FROM ssta',
+                    // eslint-disable-next-line max-len
                     cartocss: '#ssta {raster-opacity:1; raster-scaling:near; raster-colorizer-default-mode: linear; raster-colorizer-default-color:  transparent; raster-colorizer-epsilon:0.11; raster-colorizer-stops: stop(1, #ff4d4d) stop(140, #FEB24C) stop(200, #fff2cc) stop(220, #C7E9B4) stop(240, #0080ff)}',
                     cartocss_version: '2.3.0',
                     geom_column: 'the_raster_webmercator',

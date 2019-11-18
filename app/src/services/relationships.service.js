@@ -6,9 +6,11 @@ class RelationshipsService {
 
     static async getRelationships(layers, includes, user) {
         logger.info(`Getting relationships of layers: ${layers}`);
+        // eslint-disable-next-line no-plusplus
         for (let i = 0; i < layers.length; i++) {
             try {
                 if (includes.indexOf('vocabulary') > -1) {
+                    // eslint-disable-next-line no-await-in-loop
                     const vocabularies = await ctRegisterMicroservice.requestToMicroservice({
                         uri: `/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary`,
                         method: 'GET',
@@ -17,6 +19,7 @@ class RelationshipsService {
                     layers[i].vocabulary = vocabularies.data;
                 }
                 if (includes.indexOf('user') > -1) {
+                    // eslint-disable-next-line no-await-in-loop
                     const userData = await ctRegisterMicroservice.requestToMicroservice({
                         uri: `/auth/user/find-by-ids`,
                         method: 'POST',
