@@ -4,6 +4,7 @@ const koaLogger = require('koa-logger');
 const mongoose = require('mongoose');
 const config = require('config');
 const loader = require('loader');
+const koaSimpleHealthCheck = require('koa-simple-healthcheck');
 const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 const ErrorSerializer = require('serializers/error.serializer');
 
@@ -75,6 +76,7 @@ async function init() {
             });
 
             app.use(koaLogger());
+            app.use(koaSimpleHealthCheck());
 
             koaValidate(app);
 
