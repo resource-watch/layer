@@ -5,7 +5,7 @@ const Layer = require('models/layer.model');
 const { USERS } = require('./utils/test.constants');
 const { getTestServer } = require('./utils/test-server');
 
-const should = chai.should();
+chai.should();
 
 let requester;
 
@@ -139,9 +139,9 @@ describe('Layer create tests', () => {
 
                 if (matches.length !== 2) return false;
 
-                const layer = await Layer.findOne({ _id: matches[1] }).exec();
+                const matchingLayer = await Layer.findOne({ _id: matches[1] }).exec();
 
-                return !!layer;
+                return !!matchingLayer;
             })
             .reply(200, (uri) => {
                 const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;
@@ -353,9 +353,9 @@ describe('Layer create tests', () => {
 
                 if (matches.length !== 2) return false;
 
-                const layer = await Layer.findOne({ _id: matches[1] }).exec();
+                const matchingLayer = await Layer.findOne({ _id: matches[1] }).exec();
 
-                return !!layer;
+                return !!matchingLayer;
             })
             .reply(200, (uri) => {
                 const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;

@@ -6,7 +6,7 @@ const { getTestServer } = require('./utils/test-server');
 const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
-const should = chai.should();
+chai.should();
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

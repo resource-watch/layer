@@ -320,14 +320,10 @@ const authorizationMiddleware = async (ctx, next) => {
     }
     const allowedOperations = newLayerCreation;
     if ((user.role === 'MANAGER' || user.role === 'ADMIN') && !allowedOperations) {
-        try {
-            const permission = await LayerService.hasPermission(ctx.params.layer, user);
-            if (!permission) {
-                ctx.throw(403, 'Forbidden');
-                return;
-            }
-        } catch (err) {
-            throw err;
+        const permission = await LayerService.hasPermission(ctx.params.layer, user);
+        if (!permission) {
+            ctx.throw(403, 'Forbidden');
+            return;
         }
     }
     await next(); // SUPERADMIN is included here
