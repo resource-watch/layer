@@ -61,7 +61,7 @@ describe('Layer env update', () => {
     });
 
     afterEach(async () => {
-        await Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

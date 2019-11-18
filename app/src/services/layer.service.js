@@ -124,7 +124,7 @@ class LayerService {
             slug: id
         }).exec();
         if (!layer) {
-            logger.error(`[LayerService]: Layer with id ${id} doesn't exist`);
+            logger.info(`[LayerService]: Layer with id ${id} doesn't exist`);
             throw new LayerNotFound(`Layer with id '${id}' doesn't exist`);
         }
         if (includes && includes.length > 0) {
@@ -220,7 +220,7 @@ class LayerService {
         const layers = await Layer.find({
             dataset
         }).exec();
-        await Layer.update({ dataset }, { $set: { env } }, { multi: true });
+        await Layer.updateMany({ dataset }, { $set: { env } }, { multi: true });
         return layers;
     }
 

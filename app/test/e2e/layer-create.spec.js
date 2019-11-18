@@ -21,7 +21,7 @@ describe('Layer create tests', () => {
 
         requester = await getTestServer();
 
-        Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
     });
 
     it('Create a layer without being authenticated should fail (401 http code)', async () => {
@@ -508,7 +508,7 @@ describe('Layer create tests', () => {
     });
 
     afterEach(async () => {
-        await Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -26,7 +26,7 @@ describe('Find layers by IDs', () => {
 
         requester = await getTestServer();
 
-        Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
     });
 
     it('Find layers without ids in body returns a 400 error', async () => {
@@ -209,7 +209,7 @@ describe('Find layers by IDs', () => {
     });
 
     afterEach(async () => {
-        await Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

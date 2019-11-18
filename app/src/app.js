@@ -7,22 +7,17 @@ const loader = require('loader');
 const koaSimpleHealthCheck = require('koa-simple-healthcheck');
 const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 const ErrorSerializer = require('serializers/error.serializer');
+const koaValidate = require('koa-validate');
+const koaBody = require('koa-body');
+
+let mongooseOptions = require('../../config/mongoose');
 
 const mongoUri = process.env.MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
-const koaValidate = require('koa-validate');
 
-const koaBody = require('koa-body')({
-    multipart: true,
-    jsonLimit: '50mb',
-    formLimit: '50mb',
-    textLimit: '50mb'
-});
-
-let dbOptions = { useNewUrlParser: true };
 // KUBE CLUSTER
 if (mongoUri.indexOf('replicaSet') > -1) {
-    dbOptions = {
-        useNewUrlParser: true,
+    mongooseOptions = {
+        ...mongooseOptions,
         db: { native_parser: true },
         replset: {
             auto_reconnect: false,
@@ -53,7 +48,12 @@ async function init() {
 
             const app = new Koa();
 
-            app.use(koaBody);
+            app.use(koaBody({
+                multipart: true,
+                jsonLimit: '50mb',
+                formLimit: '50mb',
+                textLimit: '50mb'
+            }));
 
             app.use(async (ctx, next) => {
                 try {
@@ -113,7 +113,7 @@ async function init() {
         }
 
         logger.info(`Connecting to MongoDB URL ${mongoUri}`);
-        mongoose.connect(mongoUri, dbOptions, onDbReady);
+        mongoose.connect(mongoUri, mongooseOptions, onDbReady);
     });
 }
 
