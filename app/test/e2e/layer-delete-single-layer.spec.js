@@ -57,6 +57,22 @@ describe('Delete single layer by id', async () => {
 
     it('Deleting a single layer by id while being authenticated as MANAGER that owns the layer should delete the specific layer in specific dataset (happy case)', async () => {
         createMockDataset('123');
+
+        nock(process.env.CT_URL)
+            .delete('/v1/graph/layer/123')
+            .once()
+            .reply(200, {});
+
+        nock(process.env.CT_URL)
+            .delete('/v1/layer/123/expire-cache')
+            .once()
+            .reply(200, {});
+
+        nock(process.env.CT_URL)
+            .delete('/v1/dataset/123/layer/123/metadata')
+            .once()
+            .reply(200, {});
+
         const layer = createLayer(['rw'], '123', '123', USERS.MANAGER.id);
         await new Layer(layer).save();
 
@@ -149,7 +165,7 @@ describe('Delete single layer by id', async () => {
     });
 
     afterEach(async () => {
-        await Layer.remove({}).exec();
+        await Layer.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

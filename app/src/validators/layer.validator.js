@@ -118,7 +118,7 @@ class LayerValidator {
         koaObj.checkBody('applicationConfig').optional().check((applicationConfig) => LayerValidator.isObject(applicationConfig), 'must be an object');
         koaObj.checkBody('staticImageConfig').optional().check((staticImageConfig) => LayerValidator.isObject(staticImageConfig), 'must be an object');
         if (koaObj.errors) {
-            logger.error('Error validating dataset creation');
+            logger.info('Error validating dataset creation');
             throw new LayerNotValid(koaObj.errors);
         }
         return true;
@@ -148,7 +148,7 @@ class LayerValidator {
         koaObj.checkBody('applicationConfig').optional().check((applicationConfig) => LayerValidator.isObject(applicationConfig), 'must be an object');
         koaObj.checkBody('staticImageConfig').optional().check((staticImageConfig) => LayerValidator.isObject(staticImageConfig), 'must be an object');
         if (koaObj.errors) {
-            logger.error('Error validating dataset creation');
+            logger.info('Error validating dataset creation');
             throw new LayerNotValid(koaObj.errors);
         }
         return true;
