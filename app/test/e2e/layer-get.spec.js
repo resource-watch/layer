@@ -267,6 +267,18 @@ describe('Get layers', () => {
         });
     });
 
+    it('Getting layers filtered by user.role should not return a query param "usersRole" in the pagination links', async () => {
+        await new Layer(createLayer()).save();
+        createMockUserRole('ADMIN', ADMIN.id);
+
+        const list = await requester
+            .get('/api/v1/layer?user.role=ADMIN')
+            .query({ loggedUser: JSON.stringify(ADMIN) });
+
+        list.body.should.have.property('links').and.be.an('object');
+        list.body.links.should.have.property('self').and.not.includes('usersRole=');
+    });
+
     afterEach(async () => {
         await Layer.deleteMany({}).exec();
 
