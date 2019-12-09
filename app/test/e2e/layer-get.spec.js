@@ -277,6 +277,10 @@ describe('Get layers', () => {
 
         list.body.should.have.property('links').and.be.an('object');
         list.body.links.should.have.property('self').and.not.includes('usersRole=');
+        list.body.links.should.have.property('next').and.not.includes('usersRole=');
+        list.body.links.should.have.property('prev').and.not.includes('usersRole=');
+        list.body.links.should.have.property('first').and.not.includes('usersRole=');
+        list.body.links.should.have.property('last').and.not.includes('usersRole=');
     });
 
     afterEach(async () => {
