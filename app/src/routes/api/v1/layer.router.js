@@ -149,6 +149,13 @@ class LayerRouter {
         const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(user && user.role);
 
         delete query.loggedUser;
+        if (ctx.query.sort === 'user.role' || ctx.query.sort === 'user.name') {
+            logger.debug('Detected sorting by user role or name');
+            if (!user || !isAdmin) {
+                ctx.throw(403, 'Sorting by user name or role not authorized.');
+                return;
+            }
+        }
         if (Object.keys(query).find((el) => el.indexOf('collection') >= 0)) {
             if (!userId) {
                 ctx.throw(403, 'Collection filter not authorized');
