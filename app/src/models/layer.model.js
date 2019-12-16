@@ -32,6 +32,8 @@ const Layer = new Schema({
     applicationConfig: { type: Schema.Types.Mixed },
     interactionConfig: { type: Schema.Types.Mixed },
     staticImageConfig: { type: Schema.Types.Mixed },
+    userRole: { type: String, default: null, select: false },
+    userName: { type: String, default: null, select: false },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });

@@ -3,7 +3,7 @@ const Layer = require('models/layer.model');
 const chai = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer } = require('./utils/helpers');
-const { createMockUser } = require('./utils/mocks');
+const { mockUsersForSort } = require('./utils/mocks');
 const {
     USERS: {
         USER, MANAGER, ADMIN, SUPERADMIN
@@ -17,6 +17,17 @@ nock.enableNetConnect(process.env.HOST_IP);
 
 let requester;
 
+const mockFourLayersForSorting = async () => {
+    await new Layer(createLayer(null, null, null, USER.id)).save();
+    await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+    await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+    await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
+
+    mockUsersForSort([
+        USER, MANAGER, ADMIN, SUPERADMIN
+    ]);
+};
+
 describe('GET layers sorted by user fields', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
@@ -27,8 +38,6 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC without authentication should return 403 Forbidden', async () => {
-        await new Layer(createLayer()).save();
-
         const response = await requester.get('/api/v1/layer').query({ sort: 'user.role' });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
@@ -36,8 +45,6 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC with user with role USER should return 403 Forbidden', async () => {
-        await new Layer(createLayer()).save();
-
         const response = await requester.get('/api/v1/layer').query({ sort: 'user.role', loggedUser: JSON.stringify(USER) });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
@@ -45,8 +52,6 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC with user with role MANAGER should return 403 Forbidden', async () => {
-        await new Layer(createLayer()).save();
-
         const response = await requester.get('/api/v1/layer').query({ sort: 'user.role', loggedUser: JSON.stringify(MANAGER) });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
@@ -54,16 +59,7 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        const layer1 = await new Layer(createLayer(null, null, null, USER.id)).save();
-        const layer2 = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        const layer3 = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        const layer4 = await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-
-        createMockUser([{ id: layer1.userId, role: 'USER', name: 'test user' }]);
-        createMockUser([{ id: layer2.userId, role: 'MANAGER', name: 'test user' }]);
-        createMockUser([{ id: layer3.userId, role: 'ADMIN', name: 'test user' }]);
-        createMockUser([{ id: layer4.userId, role: 'SUPERADMIN', name: 'test user' }]);
-
+        await mockFourLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: 'user.role',
@@ -75,16 +71,7 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role DESC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        const layer1 = await new Layer(createLayer(null, null, null, USER.id)).save();
-        const layer2 = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        const layer3 = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        const layer4 = await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-
-        createMockUser([{ id: layer1.userId, role: 'USER', name: 'test user' }]);
-        createMockUser([{ id: layer2.userId, role: 'MANAGER', name: 'test user' }]);
-        createMockUser([{ id: layer3.userId, role: 'ADMIN', name: 'test user' }]);
-        createMockUser([{ id: layer4.userId, role: 'SUPERADMIN', name: 'test user' }]);
-
+        await mockFourLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: '-user.role',
@@ -96,16 +83,7 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.name ASC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        const layer1 = await new Layer(createLayer(null, null, null, USER.id)).save();
-        const layer2 = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        const layer3 = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        const layer4 = await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-
-        createMockUser([{ id: layer1.userId, role: 'USER', name: 'B' }]);
-        createMockUser([{ id: layer2.userId, role: 'MANAGER', name: 'A' }]);
-        createMockUser([{ id: layer3.userId, role: 'ADMIN', name: 'D' }]);
-        createMockUser([{ id: layer4.userId, role: 'SUPERADMIN', name: 'C' }]);
-
+        await mockFourLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: 'user.name',
@@ -113,20 +91,11 @@ describe('GET layers sorted by user fields', () => {
         });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['A', 'B', 'C', 'D']);
+        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test admin', 'test manager', 'test super admin', 'test user']);
     });
 
     it('Getting layers sorted by user.name DESC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        const layer1 = await new Layer(createLayer(null, null, null, USER.id)).save();
-        const layer2 = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        const layer3 = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        const layer4 = await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-
-        createMockUser([{ id: layer1.userId, role: 'USER', name: 'B' }]);
-        createMockUser([{ id: layer2.userId, role: 'MANAGER', name: 'A' }]);
-        createMockUser([{ id: layer3.userId, role: 'ADMIN', name: 'D' }]);
-        createMockUser([{ id: layer4.userId, role: 'SUPERADMIN', name: 'C' }]);
-
+        await mockFourLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: '-user.name',
@@ -134,7 +103,7 @@ describe('GET layers sorted by user fields', () => {
         });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['A', 'B', 'C', 'D']);
+        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test user', 'test super admin', 'test manager', 'test admin']);
     });
 
     afterEach(async () => {

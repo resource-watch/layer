@@ -34,14 +34,16 @@ describe('Get layers', () => {
 
     it('Getting layers should return a list of layers (happy case)', async () => {
         const savedLayer = await new Layer(createLayer()).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as ADMIN with query params user.role = ADMIN should return a list of layers created by ADMIN users (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer(null, null, null, USER.id)).save();
 
         createMockUserRole('ADMIN', ADMIN.id);
@@ -52,11 +54,12 @@ describe('Get layers', () => {
         });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as ADMIN with query params user.role = MANAGER should return a list of layers created by MANAGER users (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer(null, null, null, USER.id)).save();
 
         createMockUserRole('MANAGER', MANAGER.id);
@@ -67,11 +70,12 @@ describe('Get layers', () => {
         });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as ADMIN with query params user.role = USER should return a list of layers created by USER (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer(null, null, null, MANAGER.id)).save();
 
         createMockUserRole('USER', USER.id);
@@ -82,11 +86,12 @@ describe('Get layers', () => {
         });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as USER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer(null, null, null, MANAGER.id)).save();
 
         const list = await requester.get('/api/v1/layer').query({
@@ -95,11 +100,12 @@ describe('Get layers', () => {
         });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as MANAGER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer(null, null, null, MANAGER.id)).save();
 
         const list = await requester.get('/api/v1/layer').query({
@@ -108,11 +114,12 @@ describe('Get layers', () => {
         });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject());
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
@@ -123,7 +130,7 @@ describe('Get layers', () => {
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
 
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name
@@ -133,6 +140,7 @@ describe('Get layers', () => {
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
@@ -143,7 +151,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name
@@ -153,6 +161,7 @@ describe('Get layers', () => {
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
@@ -163,7 +172,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name
@@ -173,6 +182,7 @@ describe('Get layers', () => {
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
         const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
@@ -183,7 +193,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], savedLayer.toObject(), {
+        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
             user: {
                 email: USER.email,
                 name: USER.name,
@@ -196,9 +206,12 @@ describe('Get layers', () => {
         const savedLayerOne = await new Layer(createLayer()).save();
         const savedLayerTwo = await new Layer(createLayer()).save();
         const savedLayerThree = await new Layer(createLayer()).save();
+        const foundLayerOne = await Layer.findById(savedLayerOne._id);
+        const foundLayerTwo = await Layer.findById(savedLayerTwo._id);
+        const foundLayerThree = await Layer.findById(savedLayerThree._id);
 
         createMockUser([{
-            id: savedLayerOne.userId,
+            id: foundLayerOne.userId,
             role: 'USER',
             provider: 'local',
             email: 'user-one@control-tower.org',
@@ -216,7 +229,7 @@ describe('Get layers', () => {
         }]);
 
         createMockUser([{
-            id: savedLayerTwo.userId,
+            id: foundLayerTwo.userId,
             role: 'MANAGER',
             provider: 'local',
             email: 'user-two@control-tower.org',
@@ -228,7 +241,7 @@ describe('Get layers', () => {
         }]);
 
         createMockUser([{
-            id: savedLayerThree.userId,
+            id: foundLayerThree.userId,
             role: 'MANAGER',
             provider: 'local',
             name: 'user three',
@@ -246,20 +259,20 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerOne.id), savedLayerOne.toObject(), {
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerOne.id), foundLayerOne.toObject(), {
             user: {
                 email: 'user-one@control-tower.org',
                 name: 'test user',
                 role: 'USER'
             }
         });
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerTwo.id), savedLayerTwo.toObject(), {
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerTwo.id), foundLayerTwo.toObject(), {
             user: {
                 email: 'user-two@control-tower.org',
                 role: 'MANAGER'
             }
         });
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === savedLayerThree.id), savedLayerThree.toObject(), {
+        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerThree.id), foundLayerThree.toObject(), {
             user: {
                 name: 'user three',
                 role: 'MANAGER'

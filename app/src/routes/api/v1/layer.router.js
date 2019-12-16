@@ -1,5 +1,6 @@
 const Router = require('koa-router');
 const logger = require('logger');
+const LayerModel = require('models/layer.model');
 const LayerService = require('services/layer.service');
 const DatasetService = require('services/dataset.service');
 const RelationshipsService = require('services/relationships.service');
@@ -149,13 +150,22 @@ class LayerRouter {
         const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(user && user.role);
 
         delete query.loggedUser;
-        if (ctx.query.sort === 'user.role' || ctx.query.sort === 'user.name') {
+
+        if (ctx.query.sort && (ctx.query.sort.includes('user.role') || ctx.query.sort.includes('user.name'))) {
             logger.debug('Detected sorting by user role or name');
             if (!user || !isAdmin) {
                 ctx.throw(403, 'Sorting by user name or role not authorized.');
                 return;
             }
+            const ids = await LayerService.getAllLayersUserIds();
+            const users = await RelationshipsService.getUsersInfoByIds(ids);
+
+            await Promise.all(users.map((u) => LayerModel.updateMany(
+                { userId: u._id },
+                { userRole: u.role, userName: u.name },
+            )));
         }
+
         if (Object.keys(query).find((el) => el.indexOf('collection') >= 0)) {
             if (!userId) {
                 ctx.throw(403, 'Collection filter not authorized');
