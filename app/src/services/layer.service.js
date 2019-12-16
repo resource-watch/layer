@@ -107,8 +107,7 @@ class LayerService {
     }
 
     static getFilteredSort(sort) {
-        const processedStr = LayerService.processSortParam(sort);
-        const sortParams = processedStr.split(',');
+        const sortParams = LayerService.processSortParam(sort).split(',');
         const filteredSort = {};
         const layerAttributes = Object.keys(Layer.schema.obj);
         sortParams.forEach((param) => {

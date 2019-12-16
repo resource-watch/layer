@@ -3,7 +3,7 @@ const Layer = require('models/layer.model');
 const chai = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer } = require('./utils/helpers');
-const { mockUsersForSort } = require('./utils/mocks');
+const { createMockUser } = require('./utils/mocks');
 const {
     USERS: {
         USER, MANAGER, ADMIN, SUPERADMIN
@@ -16,6 +16,17 @@ nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
 let requester;
+
+const mockUsersForSort = (users) => {
+    // Add _id property to provided users (some stuff uses _id, some uses id :shrug:)
+    const fullUsers = users.map((u) => ({ ...u, _id: u.id }));
+
+    // Mock each user request (for includes=user)
+    fullUsers.map((user) => createMockUser([user]));
+
+    // Mock all users request (for sorting by user role)
+    createMockUser(fullUsers);
+};
 
 const mockFourLayersForSorting = async () => {
     await new Layer(createLayer(null, null, null, USER.id)).save();
@@ -104,6 +115,52 @@ describe('GET layers sorted by user fields', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test user', 'test super admin', 'test manager', 'test admin']);
+    });
+
+    it('Sorting layers by user role ASC puts layers without valid users in the beginning of the list', async () => {
+        await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+        await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
+        const noUserLayer = await new Layer(createLayer(null, null, null, 'legacy')).save();
+
+        mockUsersForSort([
+            USER, MANAGER, ADMIN, SUPERADMIN
+        ]);
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'user.role',
+            loggedUser: JSON.stringify(ADMIN),
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+
+        const returnedNoUserLayer = response.body.data.find((layer) => layer.id === noUserLayer._id);
+        response.body.data.indexOf(returnedNoUserLayer).should.be.equal(0);
+    });
+
+    it('Sorting layers by user role DESC puts layers without valid users in the end of the list', async () => {
+        await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+        await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
+        const noUserLayer = await new Layer(createLayer(null, null, null, 'legacy')).save();
+
+        mockUsersForSort([
+            USER, MANAGER, ADMIN, SUPERADMIN
+        ]);
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: '-user.role',
+            loggedUser: JSON.stringify(ADMIN),
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+
+        const returnedNoUserLayer = response.body.data.find((layer) => layer.id === noUserLayer._id);
+        response.body.data.indexOf(returnedNoUserLayer).should.be.equal(4);
     });
 
     afterEach(async () => {
