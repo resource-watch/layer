@@ -51,6 +51,19 @@ class RelationshipsService {
         return layers;
     }
 
+    static async getUsersInfoByIds(ids) {
+        logger.debug('Fetching all users\' information');
+        const body = await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/auth/user/find-by-ids`,
+            method: 'POST',
+            json: true,
+            version: false,
+            body: { ids }
+        });
+
+        return body.data;
+    }
+
     static async getUsersWithRole(role) {
         const body = await ctRegisterMicroservice.requestToMicroservice({
             uri: `/auth/user/ids/${role}`,

@@ -99,8 +99,16 @@ class LayerService {
         return query;
     }
 
+    static processSortParam(sort) {
+        let processedStr = sort;
+        if (sort.includes('user.role')) processedStr = processedStr.replace(/user.role/g, 'userRole');
+        if (sort.includes('user.name')) processedStr = processedStr.replace(/user.name/g, 'userName');
+        return processedStr;
+    }
+
     static getFilteredSort(sort) {
-        const sortParams = sort.split(',');
+        const processedStr = LayerService.processSortParam(sort);
+        const sortParams = processedStr.split(',');
         const filteredSort = {};
         const layerAttributes = Object.keys(Layer.schema.obj);
         sortParams.forEach((param) => {
@@ -364,6 +372,13 @@ class LayerService {
         }
         logger.debug(`[LayerService] IDs query: ${JSON.stringify(query)}`);
         return Layer.find(query).exec();
+    }
+
+    static async getAllLayersUserIds() {
+        logger.debug(`[LayerService]: Getting the user ids of all layers`);
+        const layers = await Layer.find({}, 'userId').lean();
+        const userIds = layers.map((l) => l.userId);
+        return userIds.filter((item, idx) => userIds.indexOf(item) === idx && item !== 'legacy');
     }
 
     static async hasPermission(id, user) {
