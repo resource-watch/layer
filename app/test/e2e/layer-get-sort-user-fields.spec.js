@@ -182,6 +182,25 @@ describe('GET layers sorted by user fields', () => {
         response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['Anthony', 'bernard', 'Carlos']);
     });
 
+    it('Sorting layers by user.name is deterministic, applying an implicit sort by id after sorting by user.name', async () => {
+        const spoofedUser = { ...USER, name: 'AAA' };
+        const spoofedManager = { ...MANAGER, name: 'AAA' };
+        const spoofedAdmin = { ...ADMIN, name: 'AAA' };
+        await new Layer(createLayer(null, null, '3', spoofedUser.id)).save();
+        await new Layer(createLayer(null, null, '2', spoofedManager.id)).save();
+        await new Layer(createLayer(null, null, '1', spoofedAdmin.id)).save();
+        mockUsersForSort([spoofedUser, spoofedManager, spoofedAdmin]);
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'user.name',
+            loggedUser: JSON.stringify(ADMIN),
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(3);
+        response.body.data.map((layer) => layer.id).should.be.deep.equal(['1', '2', '3']);
+    });
+
     afterEach(async () => {
         await Layer.deleteMany({}).exec();
 
