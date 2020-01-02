@@ -163,6 +163,25 @@ describe('GET layers sorted by user fields', () => {
         response.body.data.indexOf(returnedNoUserLayer).should.be.equal(4);
     });
 
+    it('Sorting layers by user.name is case insensitive and returns a list of layers ordered by the name of the user who created the layer', async () => {
+        const firstUser = { ...USER, name: 'Anthony' };
+        const secondUser = { ...MANAGER, name: 'bernard' };
+        const thirdUser = { ...ADMIN, name: 'Carlos' };
+        await new Layer(createLayer(null, null, null, firstUser.id)).save();
+        await new Layer(createLayer(null, null, null, secondUser.id)).save();
+        await new Layer(createLayer(null, null, null, thirdUser.id)).save();
+        mockUsersForSort([firstUser, secondUser, thirdUser]);
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'user.name',
+            loggedUser: JSON.stringify(ADMIN),
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(3);
+        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['Anthony', 'bernard', 'Carlos']);
+    });
+
     afterEach(async () => {
         await Layer.deleteMany({}).exec();
 
