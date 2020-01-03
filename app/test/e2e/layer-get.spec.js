@@ -211,45 +211,25 @@ describe('Get layers', () => {
         const foundLayerThree = await Layer.findById(savedLayerThree._id);
 
         createMockUser([{
-            id: foundLayerOne.userId,
-            role: 'USER',
-            provider: 'local',
+            ...USER,
+            _id: foundLayerOne.userId,
             email: 'user-one@control-tower.org',
             name: 'test user',
-            extraUserData: {
-                apps: [
-                    'rw',
-                    'gfw',
-                    'gfw-climate',
-                    'prep',
-                    'aqueduct',
-                    'forest-atlas'
-                ]
-            }
+            role: 'USER'
         }]);
-
         createMockUser([{
-            id: foundLayerTwo.userId,
-            role: 'MANAGER',
-            provider: 'local',
+            ...MANAGER,
+            _id: foundLayerTwo.userId,
+            name: undefined,
             email: 'user-two@control-tower.org',
-            extraUserData: {
-                apps: [
-                    'rw'
-                ]
-            }
+            role: 'MANAGER'
         }]);
-
         createMockUser([{
-            id: foundLayerThree.userId,
-            role: 'MANAGER',
-            provider: 'local',
+            ...ADMIN,
+            _id: foundLayerThree.userId,
+            email: undefined,
             name: 'user three',
-            extraUserData: {
-                apps: [
-                    'rw'
-                ]
-            }
+            role: 'MANAGER'
         }]);
 
         const list = await requester.get('/api/v1/layer')

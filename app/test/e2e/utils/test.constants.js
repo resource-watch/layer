@@ -1,5 +1,6 @@
 const USERS = {
     USER: {
+        _id: '1a10d7c6e0a37126611fd7a7',
         id: '1a10d7c6e0a37126611fd7a7',
         role: 'USER',
         provider: 'local',
@@ -18,6 +19,7 @@ const USERS = {
         }
     },
     MANAGER: {
+        _id: '1a10d7c6e0a37126611fd7a5',
         id: '1a10d7c6e0a37126611fd7a5',
         role: 'MANAGER',
         provider: 'local',
@@ -36,6 +38,7 @@ const USERS = {
         }
     },
     ADMIN: {
+        _id: '1a10d7c6e0a37126611fd7a6',
         id: '1a10d7c6e0a37126611fd7a6',
         role: 'ADMIN',
         provider: 'local',
@@ -54,6 +57,7 @@ const USERS = {
         }
     },
     SUPERADMIN: {
+        _id: '1a10d7c6e0a37126601fd7a6',
         id: '1a10d7c6e0a37126601fd7a6',
         role: 'SUPERADMIN',
         provider: 'local',

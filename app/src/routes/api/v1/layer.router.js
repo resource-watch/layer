@@ -161,7 +161,10 @@ class LayerRouter {
             const users = await RelationshipsService.getUsersInfoByIds(ids);
             await Promise.all(users.map((u) => LayerModel.updateMany(
                 { userId: u._id },
-                { userRole: u.role.toLowerCase(), userName: u.name.toLowerCase() },
+                {
+                    userRole: u.role ? u.role.toLowerCase() : '',
+                    userName: u.name ? u.name.toLowerCase() : ''
+                },
             )));
         }
 
