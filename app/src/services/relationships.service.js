@@ -30,17 +30,13 @@ class RelationshipsService {
                         version: false
                     });
 
-                    if (!userData.data[0] || (!userData.data[0].name && !userData.data[0].email)) {
+                    if (!userData.data[0]) {
                         logger.warn(`Tried to use find-by-ids to load info for user with id ${layers[i].userId} but the following was returned: ${JSON.stringify(user)}`);
                     } else {
-                        layers[i].user = {
-                            name: userData.data[0].name,
-                            email: userData.data[0].email
-                        };
-                        if (user && user.role === 'ADMIN') {
-                            layers[i].user.role = userData.data[0].role;
-                        }
-
+                        layers[i].user = {};
+                        if (userData.data[0].name) layers[i].user.name = userData.data[0].name;
+                        if (userData.data[0].email) layers[i].user.email = userData.data[0].email;
+                        if (user && user.role === 'ADMIN') layers[i].user.role = userData.data[0].role;
                         logger.info('Layers including user data', layers.map((el) => el.toObject()));
                     }
                 }
