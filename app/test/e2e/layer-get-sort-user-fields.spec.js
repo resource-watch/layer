@@ -1,6 +1,7 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const chai = require('chai');
+const mongoose = require('mongoose');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer } = require('./utils/helpers');
 const { createMockUser } = require('./utils/mocks');
@@ -28,14 +29,16 @@ const mockUsersForSort = (users) => {
     createMockUser(fullUsers);
 };
 
-const mockFourLayersForSorting = async () => {
+const mockLayersForSorting = async () => {
+    const id = mongoose.Types.ObjectId();
     await new Layer(createLayer(null, null, null, USER.id)).save();
     await new Layer(createLayer(null, null, null, MANAGER.id)).save();
     await new Layer(createLayer(null, null, null, ADMIN.id)).save();
     await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
+    await new Layer(createLayer(null, null, null, id)).save();
 
     mockUsersForSort([
-        USER, MANAGER, ADMIN, SUPERADMIN
+        USER, MANAGER, ADMIN, SUPERADMIN, { id }
     ]);
 };
 
@@ -70,51 +73,51 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        await mockFourLayersForSorting();
+        await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: 'user.role',
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.role).should.be.deep.equal(['ADMIN', 'MANAGER', 'SUPERADMIN', 'USER']);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.data.map((layer) => layer.attributes.user.role).should.be.deep.equal([undefined, 'ADMIN', 'MANAGER', 'SUPERADMIN', 'USER']);
     });
 
     it('Getting layers sorted by user.role DESC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        await mockFourLayersForSorting();
+        await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: '-user.role',
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.role).should.be.deep.equal(['USER', 'SUPERADMIN', 'MANAGER', 'ADMIN']);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.data.map((layer) => layer.attributes.user.role).should.be.deep.equal(['USER', 'SUPERADMIN', 'MANAGER', 'ADMIN', undefined]);
     });
 
     it('Getting layers sorted by user.name ASC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        await mockFourLayersForSorting();
+        await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: 'user.name',
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test admin', 'test manager', 'test super admin', 'test user']);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal([undefined, 'test admin', 'test manager', 'test super admin', 'test user']);
     });
 
     it('Getting layers sorted by user.name DESC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        await mockFourLayersForSorting();
+        await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
             sort: '-user.name',
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(4);
-        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test user', 'test super admin', 'test manager', 'test admin']);
+        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.data.map((layer) => layer.attributes.user.name).should.be.deep.equal(['test user', 'test super admin', 'test manager', 'test admin', undefined]);
     });
 
     it('Sorting layers by user role ASC puts layers without valid users in the beginning of the list', async () => {
