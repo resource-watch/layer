@@ -100,10 +100,7 @@ class LayerService {
     }
 
     static processSortParam(sort) {
-        let processedStr = sort;
-        if (sort.includes('user.role')) processedStr = processedStr.replace(/user.role/g, 'userRole,_id');
-        if (sort.includes('user.name')) processedStr = processedStr.replace(/user.name/g, 'userName,_id');
-        return processedStr;
+        return sort.replace(/user.role/g, 'userRole,_id').replace(/user.name/g, 'userName,_id');
     }
 
     static getFilteredSort(sort) {
