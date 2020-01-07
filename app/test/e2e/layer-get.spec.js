@@ -212,21 +212,21 @@ describe('Get layers', () => {
 
         createMockUser([{
             ...USER,
-            _id: foundLayerOne.userId,
+            id: foundLayerOne.userId,
             email: 'user-one@control-tower.org',
             name: 'test user',
             role: 'USER'
         }]);
         createMockUser([{
             ...MANAGER,
-            _id: foundLayerTwo.userId,
+            id: foundLayerTwo.userId,
             name: undefined,
             email: 'user-two@control-tower.org',
             role: 'MANAGER'
         }]);
         createMockUser([{
             ...ADMIN,
-            _id: foundLayerThree.userId,
+            id: foundLayerThree.userId,
             email: undefined,
             name: 'user three',
             role: 'MANAGER'
