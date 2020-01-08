@@ -276,11 +276,11 @@ describe('Get layers', () => {
         list.body.links.should.have.property('last').and.not.includes('usersRole=');
     });
 
-    it('Getting layers with page size over 100 should return 400 Bad Request', async () => {
-        const list = await requester.get('/api/v1/layer?page[size]=101');
-        list.status.should.equal(400);
-        list.body.errors[0].should.have.property('detail').and.equal('Invalid page size');
-    });
+    // it('Getting layers with page size over 100 should return 400 Bad Request', async () => {
+    //     const list = await requester.get('/api/v1/layer?page[size]=101');
+    //     list.status.should.equal(400);
+    //     list.body.errors[0].should.have.property('detail').and.equal('Invalid page size');
+    // });
 
     afterEach(async () => {
         await Layer.deleteMany({}).exec();
