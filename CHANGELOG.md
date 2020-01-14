@@ -1,7 +1,12 @@
-# 09/12/2019
+# v1.0.0
+
+## 14/01/2020
+
 - Fix issue where pagination links in GET layers would have unexpected `usersRole` parameter.
 
-# 18/11/2019
+# Previous
+
+- Fix issue where pagination links in GET layers would have unexpected `usersRole` parameter.
 - Add support for dataset overwrite using multiple files in parallel.
 - Update node version to 12.
 - Replace npm with yarn.
