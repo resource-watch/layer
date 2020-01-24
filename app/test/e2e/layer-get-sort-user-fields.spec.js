@@ -122,9 +122,22 @@ describe('GET layers sorted by user fields', () => {
         await new Layer(createLayer(null, null, null, MANAGER.id)).save();
         await new Layer(createLayer(null, null, null, ADMIN.id)).save();
         await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-        const noUserLayer = await new Layer(createLayer(null, null, null, 'legacy')).save();
+        const noUserLayer1 = await new Layer(createLayer(null, null, null, 'legacy')).save();
+        const noUserLayer2 = await new Layer(createLayer(null, null, null, '5accc3660bb7c603ba473d0f')).save();
 
-        mockUsersForSort([USER, MANAGER, ADMIN, SUPERADMIN]);
+        // Custom mock user calls
+        const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
+
+        // Mock requests for includes=user
+        fullUsers.map((user) => nock(process.env.CT_URL)
+            .post('/auth/user/find-by-ids', { ids: [user.id] })
+            .reply(200, { data: user }));
+
+        // Custom mock find-by-ids call
+        const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
+        nock(process.env.CT_URL)
+            .post('/auth/user/find-by-ids', { ids: userIds })
+            .reply(200, { data: fullUsers });
 
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
@@ -132,10 +145,16 @@ describe('GET layers sorted by user fields', () => {
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.should.have.property('data').and.be.an('array').and.length(6);
 
-        const returnedNoUserLayer = response.body.data.find((layer) => layer.id === noUserLayer._id);
-        response.body.data.indexOf(returnedNoUserLayer).should.be.equal(4);
+        const returnedNoUserLayer1 = response.body.data.find((layer) => layer.id === noUserLayer1._id);
+        const returnedNoUserLayer2 = response.body.data.find((layer) => layer.id === noUserLayer2._id);
+
+        // Grab the last two layers of the returned data
+        const len = response.body.data.length;
+        const lastTwoLayers = response.body.data.slice(len - 2, len);
+        lastTwoLayers.includes(returnedNoUserLayer1).should.be.equal(true);
+        lastTwoLayers.includes(returnedNoUserLayer2).should.be.equal(true);
     });
 
     it('Sorting layers by user role DESC puts layers without valid users in the beginning of the list', async () => {
@@ -143,9 +162,22 @@ describe('GET layers sorted by user fields', () => {
         await new Layer(createLayer(null, null, null, MANAGER.id)).save();
         await new Layer(createLayer(null, null, null, ADMIN.id)).save();
         await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-        const noUserLayer = await new Layer(createLayer(null, null, null, 'legacy')).save();
+        const noUserLayer1 = await new Layer(createLayer(null, null, null, 'legacy')).save();
+        const noUserLayer2 = await new Layer(createLayer(null, null, null, '5accc3660bb7c603ba473d0f')).save();
 
-        mockUsersForSort([USER, MANAGER, ADMIN, SUPERADMIN]);
+        // Custom mock user calls
+        const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
+
+        // Mock requests for includes=user
+        fullUsers.map((user) => nock(process.env.CT_URL)
+            .post('/auth/user/find-by-ids', { ids: [user.id] })
+            .reply(200, { data: user }));
+
+        // Custom mock find-by-ids call
+        const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
+        nock(process.env.CT_URL)
+            .post('/auth/user/find-by-ids', { ids: userIds })
+            .reply(200, { data: fullUsers });
 
         const response = await requester.get('/api/v1/layer').query({
             includes: 'user',
@@ -153,10 +185,15 @@ describe('GET layers sorted by user fields', () => {
             loggedUser: JSON.stringify(ADMIN),
         });
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(5);
+        response.body.should.have.property('data').and.be.an('array').and.length(6);
 
-        const returnedNoUserLayer = response.body.data.find((layer) => layer.id === noUserLayer._id);
-        response.body.data.indexOf(returnedNoUserLayer).should.be.equal(0);
+        const returnedNoUserLayer1 = response.body.data.find((layer) => layer.id === noUserLayer1._id);
+        const returnedNoUserLayer2 = response.body.data.find((layer) => layer.id === noUserLayer2._id);
+
+        // Grab the first two layers of the returned data
+        const firstTwoLayers = response.body.data.slice(0, 2);
+        firstTwoLayers.includes(returnedNoUserLayer1).should.be.equal(true);
+        firstTwoLayers.includes(returnedNoUserLayer2).should.be.equal(true);
     });
 
     it('Sorting layers by user.name is case insensitive and returns a list of layers ordered by the name of the user who created the layer', async () => {
