@@ -1,3 +1,7 @@
+# 24/01/2020
+
+- Add possibility of sorting layers by user fields (such as name or role).
+
 # v1.0.0
 
 ## 14/01/2020
