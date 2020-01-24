@@ -162,10 +162,17 @@ class LayerRouter {
             await Promise.all(users.map((u) => LayerModel.updateMany(
                 { userId: u._id },
                 {
-                    userRole: u.role ? u.role.toLowerCase() : '',
-                    userName: u.name ? u.name.toLowerCase() : ''
+                    userRole: u.role ? u.role.toLowerCase() : '',
+                    userName: u.name ? u.name.toLowerCase() : ''
                 },
             )));
+
+            // Update layers with no user / invalid user associated so that
+            // they are sorted to the end of the list
+            await LayerModel.updateMany(
+                { userId: { $nin: ids } },
+                { userRole: '', userName: '' },
+            );
         }
 
         /**
