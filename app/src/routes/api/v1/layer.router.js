@@ -157,13 +157,18 @@ class LayerRouter {
                 ctx.throw(403, 'Sorting by user name or role not authorized.');
                 return;
             }
+
+            // Reset all layers' sorting columns
+            await LayerModel.updateMany({}, { userRole: '', userName: '' });
+
+            // Fetch info to sort again
             const ids = await LayerService.getAllLayersUserIds();
             const users = await RelationshipsService.getUsersInfoByIds(ids);
             await Promise.all(users.map((u) => LayerModel.updateMany(
                 { userId: u._id },
                 {
-                    userRole: u.role ? u.role.toLowerCase() : '',
-                    userName: u.name ? u.name.toLowerCase() : ''
+                    userRole: u.role ? u.role.toLowerCase() : '',
+                    userName: u.name ? u.name.toLowerCase() : ''
                 },
             )));
         }
