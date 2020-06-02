@@ -13,14 +13,14 @@ nock.enableNetConnect(process.env.HOST_IP);
 let requester;
 
 const updateEnv = async ({
-    role, layerId = getUUID(), apps = ['rw'], datasetId = getUUID(),
+    role, layerId = getUUID(), apps = ['rw'], dataset = getUUID(),
 }, env = 'test') => {
-    createMockDataset(datasetId);
-    const layer = createLayer(apps, datasetId, layerId);
+    createMockDataset(dataset);
+    const layer = createLayer({ applications: apps, dataset, _id: layerId });
     await new Layer(layer).save();
 
     return requester
-        .patch(`/api/v1/layer/change-environment/${datasetId}/${env}`)
+        .patch(`/api/v1/layer/change-environment/${dataset}/${env}`)
         .send({ loggedUser: role });
 };
 

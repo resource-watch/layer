@@ -31,15 +31,15 @@ const mockUsersForSort = (users) => {
 
 const mockLayersForSorting = async () => {
     const id = mongoose.Types.ObjectId();
-    await new Layer(createLayer(null, null, null, USER.id)).save();
-    await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-    await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-    await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-    await new Layer(createLayer(null, null, null, id)).save();
+    await new Layer(createLayer({ userId: USER.id })).save();
+    await new Layer(createLayer({ userId: MANAGER.id })).save();
+    await new Layer(createLayer({ userId: ADMIN.id })).save();
+    await new Layer(createLayer({ userId: SUPERADMIN.id })).save();
+    await new Layer(createLayer({ userId: id })).save();
     mockUsersForSort([USER, MANAGER, ADMIN, SUPERADMIN, { id }]);
 };
 
-describe('GET layers sorted by user fields', () => {
+describe('Get layers sorted by user fields', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
@@ -56,14 +56,20 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC with user with role USER should return 403 Forbidden', async () => {
-        const response = await requester.get('/api/v1/layer').query({ sort: 'user.role', loggedUser: JSON.stringify(USER) });
+        const response = await requester.get('/api/v1/layer').query({
+            sort: 'user.role',
+            loggedUser: JSON.stringify(USER)
+        });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
         response.body.errors[0].should.have.property('detail').and.be.equal('Sorting by user name or role not authorized.');
     });
 
     it('Getting layers sorted by user.role ASC with user with role MANAGER should return 403 Forbidden', async () => {
-        const response = await requester.get('/api/v1/layer').query({ sort: 'user.role', loggedUser: JSON.stringify(MANAGER) });
+        const response = await requester.get('/api/v1/layer').query({
+            sort: 'user.role',
+            loggedUser: JSON.stringify(MANAGER)
+        });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
         response.body.errors[0].should.have.property('detail').and.be.equal('Sorting by user name or role not authorized.');
@@ -118,12 +124,12 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user role ASC puts layers without valid users in the end of the list', async () => {
-        await new Layer(createLayer(null, null, null, USER.id)).save();
-        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-        const noUserLayer1 = await new Layer(createLayer(null, null, null, 'legacy')).save();
-        const noUserLayer2 = await new Layer(createLayer(null, null, null, '5accc3660bb7c603ba473d0f')).save();
+        await new Layer(createLayer({ userId: USER.id })).save();
+        await new Layer(createLayer({ userId: MANAGER.id })).save();
+        await new Layer(createLayer({ userId: ADMIN.id })).save();
+        await new Layer(createLayer({ userId: SUPERADMIN.id })).save();
+        const noUserLayer1 = await new Layer(createLayer({ userId: 'legacy' })).save();
+        const noUserLayer2 = await new Layer(createLayer({ userId: '5accc3660bb7c603ba473d0f' })).save();
 
         // Custom mock user calls
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
@@ -158,12 +164,12 @@ describe('GET layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user role DESC puts layers without valid users in the beginning of the list', async () => {
-        await new Layer(createLayer(null, null, null, USER.id)).save();
-        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
-        await new Layer(createLayer(null, null, null, ADMIN.id)).save();
-        await new Layer(createLayer(null, null, null, SUPERADMIN.id)).save();
-        const noUserLayer1 = await new Layer(createLayer(null, null, null, 'legacy')).save();
-        const noUserLayer2 = await new Layer(createLayer(null, null, null, '5accc3660bb7c603ba473d0f')).save();
+        await new Layer(createLayer({ userId: USER.id })).save();
+        await new Layer(createLayer({ userId: MANAGER.id })).save();
+        await new Layer(createLayer({ userId: ADMIN.id })).save();
+        await new Layer(createLayer({ userId: SUPERADMIN.id })).save();
+        const noUserLayer1 = await new Layer(createLayer({ userId: 'legacy' })).save();
+        const noUserLayer2 = await new Layer(createLayer({ userId: '5accc3660bb7c603ba473d0f' })).save();
 
         // Custom mock user calls
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
@@ -200,9 +206,9 @@ describe('GET layers sorted by user fields', () => {
         const firstUser = { ...USER, name: 'Anthony' };
         const secondUser = { ...MANAGER, name: 'bernard' };
         const thirdUser = { ...ADMIN, name: 'Carlos' };
-        await new Layer(createLayer(null, null, null, firstUser.id)).save();
-        await new Layer(createLayer(null, null, null, secondUser.id)).save();
-        await new Layer(createLayer(null, null, null, thirdUser.id)).save();
+        await new Layer(createLayer({ userId: firstUser.id })).save();
+        await new Layer(createLayer({ userId: secondUser.id })).save();
+        await new Layer(createLayer({ userId: thirdUser.id })).save();
         mockUsersForSort([firstUser, secondUser, thirdUser]);
 
         const response = await requester.get('/api/v1/layer').query({
@@ -219,9 +225,9 @@ describe('GET layers sorted by user fields', () => {
         const spoofedUser = { ...USER, name: 'AAA' };
         const spoofedManager = { ...MANAGER, name: 'AAA' };
         const spoofedAdmin = { ...ADMIN, name: 'AAA' };
-        await new Layer(createLayer(null, null, '3', spoofedUser.id)).save();
-        await new Layer(createLayer(null, null, '2', spoofedManager.id)).save();
-        await new Layer(createLayer(null, null, '1', spoofedAdmin.id)).save();
+        await new Layer(createLayer({ _id: '3', userId: spoofedUser.id })).save();
+        await new Layer(createLayer({ _id: '2', userId: spoofedManager.id })).save();
+        await new Layer(createLayer({ _id: '1', userId: spoofedAdmin.id })).save();
         mockUsersForSort([spoofedUser, spoofedManager, spoofedAdmin]);
 
         const response = await requester.get('/api/v1/layer').query({

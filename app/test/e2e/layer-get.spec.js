@@ -42,9 +42,9 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = ADMIN should return a list of layers created by ADMIN users (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, ADMIN.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: ADMIN.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
-        await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer({ userId: USER.id })).save();
 
         createMockUserRole('ADMIN', ADMIN.id);
 
@@ -58,9 +58,9 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = MANAGER should return a list of layers created by MANAGER users (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: MANAGER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
-        await new Layer(createLayer(null, null, null, USER.id)).save();
+        await new Layer(createLayer({ userId: USER.id })).save();
 
         createMockUserRole('MANAGER', MANAGER.id);
 
@@ -74,9 +74,9 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = USER should return a list of layers created by USER (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
-        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         createMockUserRole('USER', USER.id);
 
@@ -90,9 +90,9 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as USER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
-        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         const list = await requester.get('/api/v1/layer').query({
             'user.role': 'USER',
@@ -104,9 +104,9 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as MANAGER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
-        await new Layer(createLayer(null, null, null, MANAGER.id)).save();
+        await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         const list = await requester.get('/api/v1/layer').query({
             'user.role': 'USER',
@@ -118,7 +118,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -139,7 +139,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -160,7 +160,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -181,7 +181,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
