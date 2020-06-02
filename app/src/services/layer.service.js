@@ -109,21 +109,20 @@ class LayerService {
         const layerAttributes = Object.keys(Layer.schema.obj);
         sortParams.forEach((param) => {
             let sign = param.substr(0, 1);
-            let realParam = param.substr(1);
-            if (sign !== '-') {
+            let signlessParam = param.substr(1);
+            if (sign !== '-' && sign !== '+') {
+                signlessParam = param;
                 sign = '+';
-                realParam = param;
             }
-            if (layerAttributes.indexOf(realParam) >= 0) {
-                filteredSort[realParam] = parseInt(sign + 1, 10);
+            if (layerAttributes.indexOf(signlessParam) >= 0) {
+                filteredSort[signlessParam] = parseInt(sign + 1, 10);
             }
         });
         return filteredSort;
     }
 
     static async get(id, includes = null, user = null) {
-        logger.debug(`[LayerService]: Getting layer with id: ${id}`);
-        logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
+        logger.info(`[LayerService - get]: Getting layer with id: ${id}`);
         const layer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
         }).exec();
@@ -140,8 +139,7 @@ class LayerService {
     }
 
     static async create(layer, dataset, user) {
-        logger.debug(`[LayerService]: Getting layer with name:  ${layer.name}`);
-        logger.info(`[DBACCES-FIND]: layer.name: ${layer.name}`);
+        logger.info(`[LayerService - create]: Getting layer with name:  ${layer.name}`);
         const tempSlug = await LayerService.getSlug(layer.name);
 
         logger.info(`[DBACCESS-SAVE]: layer.name: ${layer.name}`);
@@ -179,8 +177,7 @@ class LayerService {
     }
 
     static async update(id, layer) {
-        logger.debug(`[LayerService]: Getting layer with id:  ${id}`);
-        logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
+        logger.info(`[LayerService - update]: Getting layer with id:  ${id}`);
         const currentLayer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
         }).exec();
@@ -220,7 +217,7 @@ class LayerService {
     }
 
     static async updateEnvironment(dataset, env) {
-        logger.debug('Updating layers with dataset', dataset);
+        logger.info('[LayerService - updateEnvironment]: Updating layers with dataset', dataset);
         const layers = await Layer.find({
             dataset
         }).exec();
@@ -229,8 +226,7 @@ class LayerService {
     }
 
     static async delete(id) {
-        logger.debug(`[LayerService]: Getting layer with id: ${id}`);
-        logger.info(`[DBACCESS-FIND]: layer.id: ${id}`);
+        logger.info(`[LayerService - delete]: Getting layer with id: ${id}`);
         const currentLayer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
         }).exec();
@@ -266,8 +262,7 @@ class LayerService {
     }
 
     static async deleteByDataset(id) {
-        logger.debug(`[LayerService]: Getting layers of dataset with id:  ${id}`);
-        logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
+        logger.info(`[LayerService - deleteByDataset]: Getting layers of dataset with id:  ${id}`);
         const layers = await Layer.find({
             dataset: id
         }).exec();
@@ -303,7 +298,7 @@ class LayerService {
     }
 
     static async expireCacheTiles(layerId) {
-        logger.debug('Expiring cache of tiles');
+        logger.info('[LayerService - expireCacheTiles]: Expiring cache of tiles');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/layer/${layerId}/expire-cache`,
             method: 'DELETE'
@@ -311,7 +306,7 @@ class LayerService {
     }
 
     static async deleteMetadata(datasetId, layerId) {
-        logger.debug('Removing metadata of the layer');
+        logger.info('[LayerService - deleteMetadata]: Expiring cache of tiles');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
             method: 'DELETE'
@@ -319,7 +314,7 @@ class LayerService {
     }
 
     static async getAll(query = {}, dataset = null, user) {
-        logger.debug(`[LayerService]: Getting all layers`);
+        logger.info(`[LayerService - getAll]: Getting all layers`);
         const sort = query.sort || '';
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
@@ -346,7 +341,7 @@ class LayerService {
     }
 
     static async getByDataset(resource) {
-        logger.debug(`[LayerService] Getting layers for datasets with ids ${resource.ids}`);
+        logger.info(`[LayerService - getByDataset] Getting layers for datasets with ids ${resource.ids}`);
         if (resource.app) {
             if (resource.app.indexOf('@') >= 0) {
                 resource.app = {
@@ -371,7 +366,7 @@ class LayerService {
     }
 
     static async getAllLayersUserIds() {
-        logger.debug(`[LayerService]: Getting the user ids of all layers`);
+        logger.info(`[LayerService - getAllLayersUserIds]: Getting the user ids of all layers`);
         const layers = await Layer.find({}, 'userId').lean();
         const userIds = layers.map((l) => l.userId);
         return userIds.filter((item, idx) => userIds.indexOf(item) === idx && item !== 'legacy');
