@@ -25,6 +25,7 @@ class LayerSerializer {
                 staticImageConfig: el.staticImageConfig || {},
                 createdAt: el.createdAt,
                 updatedAt: el.updatedAt,
+                vocabulary: el.vocabulary,
                 user: el.user
             }
         };
