@@ -1,3 +1,7 @@
+## 08/06/2020
+
+- Fix issue where microservice user validation would always fail for the currently used token.
+
 # v1.1.1
 
 ## 09/04/2020

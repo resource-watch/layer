@@ -73,20 +73,7 @@ const USERS = {
     },
     MICROSERVICE: {
         id: 'microservice',
-        role: 'MICROSERVICE',
-        provider: 'local',
-        email: 'user@control-tower.org',
-        extraUserData: {
-            apps: [
-                'rw',
-                'gfw',
-                'gfw-climate',
-                'prep',
-                'aqueduct',
-                'forest-atlas',
-                'data4sdgs'
-            ]
-        }
+        createdAt: '2016-09-14'
     }
 };
 
