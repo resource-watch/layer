@@ -306,7 +306,7 @@ class LayerService {
     }
 
     static async deleteMetadata(datasetId, layerId) {
-        logger.info('[LayerService - deleteMetadata]: Expiring cache of tiles');
+        logger.info('[LayerService - deleteMetadata]: Deleting layer metadata');
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
             method: 'DELETE'
