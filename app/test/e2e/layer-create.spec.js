@@ -25,17 +25,16 @@ describe('Layer create tests', () => {
     });
 
     it('Create a layer without being authenticated should fail (401 http code)', async () => {
-        const timestamp = new Date().getTime();
         const layer = {
-            name: `Carto DB Layer - ${timestamp}`,
+            name: `Carto DB Layer - 123456789`,
             application: ['rw']
         };
 
         nock(process.env.CT_URL)
-            .get(`/v1/dataset/${timestamp}`)
+            .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
-                    id: timestamp,
+                    id: '123456789',
                     type: 'dataset',
                     attributes: {
                         name: 'Uncontrolled Public-Use Airports -- U.S.',
@@ -74,7 +73,7 @@ describe('Layer create tests', () => {
             });
 
         const response = await requester
-            .post(`/api/v1/dataset/${timestamp}/layer`)
+            .post(`/api/v1/dataset/123456789/layer`)
             .send({
                 layer
             });
@@ -83,18 +82,17 @@ describe('Layer create tests', () => {
         response.body.should.have.property('errors').and.be.an('array');
     });
 
-    it('Create a layer for a dataset (layer root object) should be successful', async () => {
-        const timestamp = new Date().getTime();
+    it('Create a layer for a dataset (layer root object) should be successful (happy case)', async () => {
         const layer = {
-            name: `Carto DB Layer - ${timestamp}`,
+            name: `Carto DB Layer - 123456789`,
             application: ['rw']
         };
 
         nock(process.env.CT_URL)
-            .get(`/v1/dataset/${timestamp}`)
+            .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
-                    id: timestamp,
+                    id: '123456789',
                     type: 'dataset',
                     attributes: {
                         name: 'Uncontrolled Public-Use Airports -- U.S.',
@@ -134,7 +132,7 @@ describe('Layer create tests', () => {
 
         nock(process.env.CT_URL)
             .post(async (uri) => {
-                const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;
+                const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
 
                 if (matches.length !== 2) return false;
@@ -144,7 +142,7 @@ describe('Layer create tests', () => {
                 return !!matchingLayer;
             })
             .reply(200, (uri) => {
-                const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;
+                const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
                 const layerId = matches[1];
 
@@ -183,7 +181,7 @@ describe('Layer create tests', () => {
                                             low: 0,
                                             high: 0
                                         },
-                                        id: timestamp
+                                        id: '123456789'
                                     }
                                 },
                                 {
@@ -215,7 +213,7 @@ describe('Layer create tests', () => {
                             text: '\n  MATCH (dataset: DATASET {id: {idDataset}})\n  MERGE (layer: LAYER {id: {idLayer}})\n  MERGE (layer)-[r:BELONGS_TO]->(dataset) RETURN layer, dataset, r\n',
                             parameters: {
                                 idLayer: layerId,
-                                idDataset: timestamp
+                                idDataset: '123456789'
                             }
                         },
                         statementType: 'rw',
@@ -270,7 +268,7 @@ describe('Layer create tests', () => {
 
 
         const response = await requester
-            .post(`/api/v1/dataset/${timestamp}/layer`)
+            .post(`/api/v1/dataset/123456789/layer`)
             .send({
                 layer,
                 loggedUser: USERS.ADMIN
@@ -281,10 +279,10 @@ describe('Layer create tests', () => {
 
         const createdLayer = response.body.data.attributes;
 
-        createdLayer.should.have.property('name').and.equal(`Carto DB Layer - ${timestamp}`);
+        createdLayer.should.have.property('name').and.equal(`Carto DB Layer - 123456789`);
         createdLayer.should.have.property('application').and.be.an('array').and.contain('rw');
-        createdLayer.should.have.property('dataset').and.equal(`${timestamp}`);
-        createdLayer.should.have.property('slug').and.equal(`Carto-DB-Layer-${timestamp}`);
+        createdLayer.should.have.property('dataset').and.equal(`123456789`);
+        createdLayer.should.have.property('slug').and.equal(`Carto-DB-Layer-123456789`);
         createdLayer.should.have.property('protected').and.equal(false);
         createdLayer.should.have.property('default').and.equal(false);
         createdLayer.should.have.property('published').and.equal(true);
@@ -297,18 +295,17 @@ describe('Layer create tests', () => {
     });
 
     it('Create a layer for a dataset (no layer root object) should be successful', async () => {
-        const timestamp = new Date().getTime();
         const layer = {
-            name: `Carto DB Layer - ${timestamp}`,
+            name: `Carto DB Layer - 123456789`,
             application: ['rw'],
             loggedUser: USERS.ADMIN
         };
 
         nock(process.env.CT_URL)
-            .get(`/v1/dataset/${timestamp}`)
+            .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
-                    id: timestamp,
+                    id: '123456789',
                     type: 'dataset',
                     attributes: {
                         name: 'Uncontrolled Public-Use Airports -- U.S.',
@@ -348,7 +345,7 @@ describe('Layer create tests', () => {
 
         nock(process.env.CT_URL)
             .post(async (uri) => {
-                const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;
+                const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
 
                 if (matches.length !== 2) return false;
@@ -358,7 +355,7 @@ describe('Layer create tests', () => {
                 return !!matchingLayer;
             })
             .reply(200, (uri) => {
-                const regex = `^\/v1\/graph\/layer\/${timestamp}\/([A-Za-z0-9-]+)`;
+                const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
                 const layerId = matches[1];
 
@@ -397,7 +394,7 @@ describe('Layer create tests', () => {
                                             low: 0,
                                             high: 0
                                         },
-                                        id: timestamp
+                                        id: '123456789'
                                     }
                                 },
                                 {
@@ -429,7 +426,7 @@ describe('Layer create tests', () => {
                             text: '\n  MATCH (dataset: DATASET {id: {idDataset}})\n  MERGE (layer: LAYER {id: {idLayer}})\n  MERGE (layer)-[r:BELONGS_TO]->(dataset) RETURN layer, dataset, r\n',
                             parameters: {
                                 idLayer: layerId,
-                                idDataset: timestamp
+                                idDataset: '123456789'
                             }
                         },
                         statementType: 'rw',
@@ -484,7 +481,7 @@ describe('Layer create tests', () => {
 
 
         const response = await requester
-            .post(`/api/v1/dataset/${timestamp}/layer`)
+            .post(`/api/v1/dataset/123456789/layer`)
             .send(layer);
 
         response.status.should.equal(200);
@@ -492,10 +489,10 @@ describe('Layer create tests', () => {
 
         const createdLayer = response.body.data.attributes;
 
-        createdLayer.should.have.property('name').and.equal(`Carto DB Layer - ${timestamp}`);
+        createdLayer.should.have.property('name').and.equal(`Carto DB Layer - 123456789`);
         createdLayer.should.have.property('application').and.be.an('array').and.contain('rw');
-        createdLayer.should.have.property('dataset').and.equal(`${timestamp}`);
-        createdLayer.should.have.property('slug').and.equal(`Carto-DB-Layer-${timestamp}`);
+        createdLayer.should.have.property('dataset').and.equal(`123456789`);
+        createdLayer.should.have.property('slug').and.equal(`Carto-DB-Layer-123456789`);
         createdLayer.should.have.property('protected').and.equal(false);
         createdLayer.should.have.property('default').and.equal(false);
         createdLayer.should.have.property('published').and.equal(true);
