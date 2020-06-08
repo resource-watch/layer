@@ -313,7 +313,7 @@ const datasetValidationMiddleware = async (ctx, next) => {
 const isMicroservice = async (ctx, next) => {
     logger.debug('Checking if is a microservice');
     const user = LayerRouter.getUser(ctx);
-    if (!user || !user.role) {
+    if (!user || !user.id) {
         ctx.throw(401, 'Not authorized');
         return;
     }
