@@ -50,7 +50,7 @@ class LayerService {
         // }
         const layerAttributes = Object.keys(Layer.schema.paths);
         Object.keys(query).forEach((param) => {
-            if (layerAttributes.indexOf(param) < 0 && param !== 'usersRole') {
+            if ((layerAttributes.indexOf(param) < 0 && param !== 'usersRole') || ['userRole', 'userName'].includes(param)) {
                 delete query[param];
             } else if (!['env', 'usersRole'].includes(param)) {
                 switch (Layer.schema.paths[param].instance) {

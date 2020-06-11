@@ -41,6 +41,66 @@ describe('Get layers', () => {
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
+
+    it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (anon user)', async () => {
+        await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
+        await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
+        await new Layer(createLayer({ userName: 'c', name: 'c' })).save();
+        await new Layer(createLayer({ userName: 'd', name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            userName: 'a'
+        });
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (ADMIN role)', async () => {
+        await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
+        await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
+        await new Layer(createLayer({ userName: 'c', name: 'c' })).save();
+        await new Layer(createLayer({ userName: 'd', name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            userName: 'a',
+            loggedUser: JSON.stringify(ADMIN)
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers filtered by userRole should return an unfiltered list, as userRole should be ignored (anon user)', async () => {
+        await new Layer(createLayer({ userRole: 'a', name: 'a' })).save();
+        await new Layer(createLayer({ userRole: 'b', name: 'b' })).save();
+        await new Layer(createLayer({ userRole: 'c', name: 'c' })).save();
+        await new Layer(createLayer({ userRole: 'd', name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            userRole: 'a'
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers filtered by userRole should return an unfiltered list, as userRole should be ignored (ADMIN user)', async () => {
+        await new Layer(createLayer({ userRole: 'a', name: 'a' })).save();
+        await new Layer(createLayer({ userRole: 'b', name: 'b' })).save();
+        await new Layer(createLayer({ userRole: 'c', name: 'c' })).save();
+        await new Layer(createLayer({ userRole: 'd', name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            userRole: 'a',
+            loggedUser: JSON.stringify(ADMIN)
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
     it('Getting layers as ADMIN with query params user.role = ADMIN should return a list of layers created by ADMIN users (happy case)', async () => {
         const savedLayer = await new Layer(createLayer({ userId: ADMIN.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);

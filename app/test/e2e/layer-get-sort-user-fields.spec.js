@@ -75,6 +75,68 @@ describe('Get layers sorted by user fields', () => {
         response.body.errors[0].should.have.property('detail').and.be.equal('Sorting by user name or role not authorized.');
     });
 
+    it('Getting layers sorted by userName and name should return a list of layers ordered by name, as userName should be ignored (anon user)', async () => {
+        await new Layer(createLayer({ name: 'a' })).save();
+        await new Layer(createLayer({ name: 'b' })).save();
+        await new Layer(createLayer({ name: 'c' })).save();
+        await new Layer(createLayer({ name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'userName,name'
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers sorted by userName and name should return a list of layers ordered by name, as userName should be ignored (ADMIN role)', async () => {
+        await new Layer(createLayer({ name: 'a' })).save();
+        await new Layer(createLayer({ name: 'b' })).save();
+        await new Layer(createLayer({ name: 'c' })).save();
+        await new Layer(createLayer({ name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'userName,name',
+            loggedUser: JSON.stringify(ADMIN)
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers sorted by userRole and name should return a list of layers ordered by name, as userRole should be ignored (anon user)', async () => {
+        await new Layer(createLayer({ name: 'a' })).save();
+        await new Layer(createLayer({ name: 'b' })).save();
+        await new Layer(createLayer({ name: 'c' })).save();
+        await new Layer(createLayer({ name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'userRole,name'
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
+    it('Getting layers sorted by userRole and name should return a list of layers ordered by name, as userRole should be ignored (ADMIN role)', async () => {
+        await new Layer(createLayer({ name: 'a' })).save();
+        await new Layer(createLayer({ name: 'b' })).save();
+        await new Layer(createLayer({ name: 'c' })).save();
+        await new Layer(createLayer({ name: 'd' })).save();
+
+        const response = await requester.get('/api/v1/layer').query({
+            includes: 'user',
+            sort: 'userRole,name',
+            loggedUser: JSON.stringify(ADMIN)
+        });
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(4);
+        response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
+    });
+
     it('Getting layers sorted by user.role ASC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
         await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer').query({

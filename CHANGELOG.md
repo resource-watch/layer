@@ -1,3 +1,7 @@
+## 11/06/2020
+
+- Prevent filtering by internal `userRole` and `userName` fields.
+
 ## 08/06/2020
 
 - Fix issue where microservice user validation would always fail for the currently used token.
