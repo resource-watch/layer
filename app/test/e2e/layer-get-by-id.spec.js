@@ -37,7 +37,9 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({
+            userId: USER.id
+        })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -58,7 +60,9 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({
+            userId: USER.id
+        })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -79,7 +83,9 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({
+            userId: USER.id
+        })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -100,7 +106,9 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer(null, null, null, USER.id)).save();
+        const savedLayer = await new Layer(createLayer({
+            userId: USER.id
+        })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
@@ -129,7 +137,10 @@ describe('Get layers by id', () => {
 
     it('Getting layers by dataset should return the layers for specific dataset when dataset exists (happy case)', async () => {
         createMockDataset('123');
-        const savedLayer = await new Layer(createLayer(['rw'], '123')).save();
+        const savedLayer = await new Layer(createLayer({
+            application: ['rw'],
+            dataset: 123
+        })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         const datasetLayers = await requester.get(`/api/v1/dataset/123/layer`);

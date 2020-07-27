@@ -73,21 +73,22 @@ const createMockDataset = (id) => {
         });
 };
 
-const createLayer = (apps = null, datasetID = null, layerId = null, userID) => {
-    const uuid = layerId || getUUID();
-    const datasetUuid = datasetID || getUUID();
+// apps = null, datasetID = null, layerId = null, userID
+const createLayer = (anotherData = {}) => {
+    const uuid = anotherData._id || getUUID();
+    delete anotherData._id;
 
     return {
         _id: uuid,
         provider: 'cartodb',
-        application: apps || ['rw'],
+        application: ['rw'],
         status: 1,
         iso: [],
         name: `Layer ${uuid}`,
         description: '',
         published: true,
         default: true,
-        dataset: datasetUuid,
+        dataset: getUUID(),
         slug: `layer-${uuid}`,
         env: 'production',
         layerConfig,
@@ -104,11 +105,11 @@ const createLayer = (apps = null, datasetID = null, layerId = null, userID) => {
         },
         applicationConfig: {},
         staticImageConfig: {},
-        userId: userID || getUUID(),
+        userId: getUUID(),
         protected: false,
         createdAt: new Date(2018, 1, 1),
-        updatedAt: new Date(2018, 1, 1)
-
+        updatedAt: new Date(2018, 1, 1),
+        ...anotherData
     };
 };
 

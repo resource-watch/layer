@@ -106,11 +106,11 @@ describe('Layer update', () => {
             staticImageConfig: { test: true }
         };
 
-        const datasetId = getUUID();
+        const dataset = getUUID();
         const layerId = getUUID();
 
-        createMockDataset(datasetId);
-        const layer = createLayer(['rw'], datasetId, layerId);
+        createMockDataset(dataset);
+        const layer = createLayer({ application: ['rw'], dataset, _id: layerId });
         await new Layer(layer).save();
 
         nock(process.env.CT_URL)
@@ -122,7 +122,7 @@ describe('Layer update', () => {
             });
 
         const datasetLayer = await requester
-            .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .patch(`${datasetPrefix}/${dataset}/layer/${layerId}?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .send(LAYER_TO_UPDATE);
 
         datasetLayer.status.should.equal(200);

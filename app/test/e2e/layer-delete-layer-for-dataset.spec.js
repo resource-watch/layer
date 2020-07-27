@@ -16,7 +16,7 @@ let requester;
 
 const deleteLayers = async (role) => {
     createMockDataset('123');
-    const layer = createLayer(['rw'], '123');
+    const layer = createLayer({ application: ['rw'], dataset: '123' });
     await new Layer(layer).save();
 
     return requester
@@ -67,7 +67,7 @@ describe('Delete all layers for a dataset', async () => {
 
     it('Deleting all layers for a dataset be successful', async () => {
         createMockDataset('123');
-        const layer = createLayer(['rw'], '123');
+        const layer = createLayer({ application: ['rw'], dataset: '123' });
         await new Layer(layer).save();
 
         nock(process.env.CT_URL)

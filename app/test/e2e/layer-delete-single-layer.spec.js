@@ -12,7 +12,7 @@ let requester;
 
 const deleteLayer = async (role, layerId, apps = ['rw'], providedLayer) => {
     createMockDataset(layerId || '123');
-    const layer = providedLayer || createLayer(apps, layerId || '123', layerId);
+    const layer = providedLayer || createLayer({ application: apps, dataset: layerId || '123', _id: layerId });
     await new Layer(layer).save();
 
     return requester
@@ -73,7 +73,9 @@ describe('Delete single layer by id', async () => {
             .once()
             .reply(200, {});
 
-        const layer = createLayer(['rw'], '123', '123', USERS.MANAGER.id);
+        const layer = createLayer({
+            application: ['rw'], dataset: '123', _id: '123', userId: USERS.MANAGER.id
+        });
         await new Layer(layer).save();
 
         const datasetLayer = await requester
@@ -101,7 +103,7 @@ describe('Delete single layer by id', async () => {
 
     it('Deleting a single layer by id should return 404 "Layer with id X not found" error when the layer doesn\'t exist', async () => {
         createMockDataset('123');
-        const layer = createLayer(['rw'], '123', '321');
+        const layer = createLayer({ application: ['rw'], dataset: '123', _id: '321' });
         await new Layer(layer).save();
 
         const datasetLayer = await requester
@@ -113,7 +115,7 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should delete the specific layer in specific dataset (happy case)', async () => {
-        const layer = createLayer(['rw'], '123', '123');
+        const layer = createLayer({ application: ['rw'], dataset: '123', _id: '123' });
         createMockDataset('123');
         await new Layer(layer).save();
 

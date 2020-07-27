@@ -1,3 +1,11 @@
+# v1.1.2
+
+## 13/07/2020
+
+- Security updates to the `handlebars` and `websocket-extensions` NPM packages.
+- Prevent filtering by internal `userRole` and `userName` fields.
+- Fix issue where microservice user validation would always fail for the currently used token.
+
 # v1.1.1
 
 ## 09/04/2020
