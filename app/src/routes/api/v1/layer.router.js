@@ -1,5 +1,6 @@
 const Router = require('koa-router');
 const logger = require('logger');
+const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
 const LayerModel = require('models/layer.model');
 const LayerService = require('services/layer.service');
 const DatasetService = require('services/dataset.service');
@@ -11,7 +12,6 @@ const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
 const { USER_ROLES } = require('app.constants');
-const axios = require('axios');
 
 const router = new Router({});
 
@@ -145,30 +145,27 @@ class LayerRouter {
 
     static async expireCache(ctx) {
         const layerId = ctx.params.layer;
-        const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
 
         logger.info(`[LayerRouter - expireCache] Expiring cache for layer with id: ${layerId}`);
 
         try {
             const layer = await LayerService.get(layerId);
-            let response;
-            if (layer.provider === 'gee') {
-                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/gee/${layerId}/expire-cache?loggedUser=${JSON.stringify(user)}`);
-            } else if (layer.provider === 'loca' || layer.provider === 'nexgddp') {
-                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/${layer.provider}/${layerId}/expire-cache?loggedUser=${JSON.stringify(user)}`);
-            } else {
+            if (!['gee', 'loca', 'nexgddp'].includes(layer.provider)) {
                 ctx.throw(400, 'Layer provider does not support cache expiration');
-                return;
             }
-
-            ctx.body = response.data;
-
+            const response = await ctRegisterMicroservice.requestToMicroservice({
+                uri: `/layer/${layer.provider}/${layerId}/expire-cache`,
+                method: 'DELETE',
+                json: true
+            });
+            ctx.body = response;
+            ctx.status = 200;
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
                 return;
             }
-            ctx.throw(err.response.status, JSON.stringify(err.response.data));
+            ctx.throw(err.statusCode, JSON.stringify(err.error));
         }
     }
 

@@ -55,7 +55,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/gee/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -73,7 +73,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/loca/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -91,7 +91,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -109,7 +109,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/gee/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -127,7 +127,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/loca/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -145,7 +145,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
@@ -163,7 +163,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(403, reply);
 
         const response = await requester
