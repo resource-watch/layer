@@ -48,25 +48,6 @@ describe('Expire layer cache', async () => {
         ensureCorrectError(response.body, 'Forbidden');
     });
 
-    it('Expiring layer cache while being authenticated as ADMIN should return a 403 "Forbidden" error', async () => {
-        const layer = createLayer({ provider: 'gee' });
-        await new Layer(layer).save();
-
-        const reply = { result: 'OK' };
-
-        nock(process.env.CT_URL)
-            .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
-            .once()
-            .reply(200, reply);
-
-        const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
-            .send();
-
-        response.status.should.equal(200);
-        response.body.should.deep.equal(reply);
-    });
-
     it('Expiring layer cache while being authenticated as MICROSERVICE for a GEE layer should return a 200 and the response from the proxied MS', async () => {
         const layer = createLayer({ provider: 'gee' });
         await new Layer(layer).save();
@@ -74,8 +55,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/gee/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -93,8 +73,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/loca/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -112,8 +91,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -131,8 +109,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/gee/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -150,8 +127,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/loca/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -169,8 +145,7 @@ describe('Expire layer cache', async () => {
         const reply = { result: 'OK' };
 
         nock(process.env.CT_URL)
-            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
-            .once()
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
             .reply(200, reply);
 
         const response = await requester
@@ -179,6 +154,31 @@ describe('Expire layer cache', async () => {
 
         response.status.should.equal(200);
         response.body.should.deep.equal(reply);
+    });
+
+    it('Expiring layer cache while being authenticated as ADMIN for a NEXGDDP layer should return the same response code as the proxied MS call', async () => {
+        const layer = createLayer({ provider: 'nexgddp' });
+        await new Layer(layer).save();
+
+        const reply = { result: 'OK' };
+
+        nock(process.env.CT_URL)
+            .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .reply(403, reply);
+
+        const response = await requester
+            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .send();
+
+        response.status.should.equal(403);
+        response.body.should.deep.equal({
+            errors: [
+                {
+                    detail: JSON.stringify(reply),
+                    status: 403
+                }
+            ]
+        });
     });
 
     afterEach(async () => {

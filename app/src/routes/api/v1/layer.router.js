@@ -145,15 +145,17 @@ class LayerRouter {
 
     static async expireCache(ctx) {
         const layerId = ctx.params.layer;
+        const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
+
         logger.info(`[LayerRouter - expireCache] Expiring cache for layer with id: ${layerId}`);
 
         try {
             const layer = await LayerService.get(layerId);
             let response;
             if (layer.provider === 'gee') {
-                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/gee/${layerId}/expire-cache`);
+                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/gee/${layerId}/expire-cache?loggedUser=${JSON.stringify(user)}`);
             } else if (layer.provider === 'loca' || layer.provider === 'nexgddp') {
-                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/${layer.provider}/${layerId}/expire-cache`);
+                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/${layer.provider}/${layerId}/expire-cache?loggedUser=${JSON.stringify(user)}`);
             } else {
                 ctx.throw(400, 'Layer provider does not support cache expiration');
                 return;
@@ -166,7 +168,7 @@ class LayerRouter {
                 ctx.throw(404, err.message);
                 return;
             }
-            throw err;
+            ctx.throw(err.response.status, JSON.stringify(err.response.data));
         }
     }
 
