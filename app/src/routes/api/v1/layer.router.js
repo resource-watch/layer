@@ -11,6 +11,7 @@ const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
 const { USER_ROLES } = require('app.constants');
+const axios = require('axios');
 
 const router = new Router({});
 
@@ -88,7 +89,8 @@ class LayerRouter {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
                 return;
-            } if (err instanceof LayerDuplicated) {
+            }
+            if (err instanceof LayerDuplicated) {
                 ctx.throw(400, err.message);
                 return;
             }
@@ -132,6 +134,33 @@ class LayerRouter {
                 });
             }
             ctx.set('uncache', uncache.join(' '));
+        } catch (err) {
+            if (err instanceof LayerNotFound) {
+                ctx.throw(404, err.message);
+                return;
+            }
+            throw err;
+        }
+    }
+
+    static async expireCache(ctx) {
+        const layerId = ctx.params.layer;
+        logger.info(`[LayerRouter - expireCache] Expiring cache for layer with id: ${layerId}`);
+
+        try {
+            const layer = await LayerService.get(layerId);
+            let response;
+            if (layer.provider === 'gee') {
+                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/gee/${layerId}/expire-cache`);
+            } else if (layer.provider === 'loca' || layer.provider === 'nexgddp') {
+                response = await axios.delete(`${process.env.CT_URL}/${process.env.API_VERSION}/layer/${layer.provider}/${layerId}/expire-cache`);
+            } else {
+                ctx.throw(400, 'Layer provider does not support cache expiration');
+                return;
+            }
+
+            ctx.body = response.data;
+
         } catch (err) {
             if (err instanceof LayerNotFound) {
                 ctx.throw(404, err.message);
@@ -324,6 +353,20 @@ const isMicroservice = async (ctx, next) => {
     await next();
 };
 
+const isMicroserviceOrAdmin = async (ctx, next) => {
+    logger.debug('Checking if is a microservice or admin');
+    const user = LayerRouter.getUser(ctx);
+    if (!user || !user.id) {
+        ctx.throw(401, 'Not authorized');
+        return;
+    }
+    if (user.id !== 'microservice' && user.role !== 'ADMIN') {
+        ctx.throw(403, 'Forbidden');
+        return;
+    }
+    await next();
+};
+
 const authorizationMiddleware = async (ctx, next) => {
     logger.info(`[LayerRouter] Checking authorization`);
     // Get user from query (delete) or body (post-patch)
@@ -371,6 +414,8 @@ router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerR
 router.patch('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
 router.delete('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
 router.delete('/dataset/:dataset/layer', datasetValidationMiddleware, isMicroservice, LayerRouter.deleteByDataset);
+
+router.delete('/layer/:layer/expire-cache', isMicroserviceOrAdmin, LayerRouter.expireCache);
 
 router.post('/layer/find-by-ids', LayerRouter.getByIds);
 router.patch('/layer/change-environment/:dataset/:env', datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
