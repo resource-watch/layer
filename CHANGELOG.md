@@ -1,6 +1,9 @@
-## 05/11/2020
+# v1.2.0
+
+## 17/11/2020
 
 - Add proxy endpoint for `expire-cache` functionality
+
 
 # v1.1.2
 
