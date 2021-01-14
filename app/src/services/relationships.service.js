@@ -1,6 +1,5 @@
 const logger = require('logger');
-const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
-
+const { RWAPIMicroservice } = require('rw-api-microservice-node');
 
 class RelationshipsService {
 
@@ -11,7 +10,7 @@ class RelationshipsService {
             try {
                 if (includes.indexOf('vocabulary') > -1) {
                     // eslint-disable-next-line no-await-in-loop
-                    const vocabularies = await ctRegisterMicroservice.requestToMicroservice({
+                    const vocabularies = await RWAPIMicroservice.requestToMicroservice({
                         uri: `/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary`,
                         method: 'GET',
                         json: true
@@ -20,7 +19,7 @@ class RelationshipsService {
                 }
                 if (includes.indexOf('user') > -1) {
                     // eslint-disable-next-line no-await-in-loop
-                    const userData = await ctRegisterMicroservice.requestToMicroservice({
+                    const userData = await RWAPIMicroservice.requestToMicroservice({
                         uri: `/auth/user/find-by-ids`,
                         method: 'POST',
                         json: true,
@@ -49,7 +48,7 @@ class RelationshipsService {
 
     static async getUsersInfoByIds(ids) {
         logger.debug('Fetching all users\' information');
-        const body = await ctRegisterMicroservice.requestToMicroservice({
+        const body = await RWAPIMicroservice.requestToMicroservice({
             uri: `/auth/user/find-by-ids`,
             method: 'POST',
             json: true,
@@ -61,7 +60,7 @@ class RelationshipsService {
     }
 
     static async getUsersWithRole(role) {
-        const body = await ctRegisterMicroservice.requestToMicroservice({
+        const body = await RWAPIMicroservice.requestToMicroservice({
             uri: `/auth/user/ids/${role}`,
             method: 'GET',
             json: true,
@@ -73,7 +72,7 @@ class RelationshipsService {
 
     static async getCollections(ids, userId) {
         try {
-            const result = await ctRegisterMicroservice.requestToMicroservice({
+            const result = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/collection/find-by-ids`,
                 method: 'POST',
                 json: true,
@@ -91,7 +90,7 @@ class RelationshipsService {
 
     static async getFavorites(app, userId) {
         try {
-            const result = await ctRegisterMicroservice.requestToMicroservice({
+            const result = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/favourite/find-by-user`,
                 method: 'POST',
                 json: true,

@@ -1,6 +1,6 @@
 const Router = require('koa-router');
 const logger = require('logger');
-const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
+const { RWAPIMicroservice } = require('rw-api-microservice-node');
 const LayerModel = require('models/layer.model');
 const LayerService = require('services/layer.service');
 const DatasetService = require('services/dataset.service');
@@ -153,7 +153,7 @@ class LayerRouter {
             if (!['gee', 'loca', 'nexgddp'].includes(layer.provider)) {
                 ctx.throw(400, 'Layer provider does not support cache expiration');
             }
-            const response = await ctRegisterMicroservice.requestToMicroservice({
+            const response = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/layer/${layer.provider}/${layerId}/expire-cache`,
                 method: 'DELETE',
                 json: true

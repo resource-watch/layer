@@ -138,10 +138,17 @@ const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) =>
     receivedLayer.attributes.should.deep.equal(expectedLayer);
 };
 
+const mockGetUserFromToken = (userProfile) => {
+    nock(process.env.CT_URL, { reqheaders: { authorization: 'Bearer abcd' } })
+        .get('/auth/user/me')
+        .reply(200, userProfile);
+};
+
 module.exports = {
     createLayer,
     createMockDataset,
     ensureCorrectError,
     getUUID,
-    ensureCorrectLayer
+    ensureCorrectLayer,
+    mockGetUserFromToken
 };

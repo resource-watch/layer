@@ -30,6 +30,9 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should return 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        nock(process.env.CT_URL)
+            .get(`/v1/dataset/321`)
+            .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
         const datasetLayer = await requester.delete(`/api/v1/dataset/321/layer/123`);
         datasetLayer.status.should.equal(404);
         ensureCorrectError(datasetLayer.body, 'Dataset not found');
@@ -81,7 +84,6 @@ describe('Delete single layer by id', async () => {
         const datasetLayer = await requester
             .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.MANAGER)}`)
             .send();
-
 
         datasetLayer.status.should.equal(200);
         datasetLayer.body.data.id.should.equal(layer._id);

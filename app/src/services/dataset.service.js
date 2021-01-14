@@ -1,5 +1,5 @@
 const logger = require('logger');
-const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
+const { RWAPIMicroservice } = require('rw-api-microservice-node');
 
 class DatasetService {
 
@@ -9,7 +9,7 @@ class DatasetService {
             logger.info(`[DatasetService] Validating presence of dataset with id: ${datasetId}`);
 
             try {
-                const dataset = await ctRegisterMicroservice.requestToMicroservice({
+                const dataset = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/dataset/${datasetId}`,
                     method: 'GET',
                     json: true
@@ -27,6 +27,5 @@ class DatasetService {
     }
 
 }
-
 
 module.exports = DatasetService;
