@@ -4,6 +4,7 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { USERS } = require('./utils/test.constants');
 const { getTestServer } = require('./utils/test-server');
+const { mockGetUserFromToken } = require('./utils/helpers');
 
 chai.should();
 
@@ -266,12 +267,12 @@ describe('Layer create tests', () => {
                 };
             });
 
-
+        mockGetUserFromToken(USERS.ADMIN);
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 layer,
-                loggedUser: USERS.ADMIN
             });
 
         response.status.should.equal(200);
@@ -295,10 +296,11 @@ describe('Layer create tests', () => {
     });
 
     it('Create a layer for a dataset (no layer root object) should be successful', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
+
         const layer = {
             name: `Carto DB Layer - 123456789`,
             application: ['rw'],
-            loggedUser: USERS.ADMIN
         };
 
         nock(process.env.CT_URL)
@@ -479,9 +481,9 @@ describe('Layer create tests', () => {
                 };
             });
 
-
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
+            .set('Authorization', `Bearer abcd`)
             .send(layer);
 
         response.status.should.equal(200);

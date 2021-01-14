@@ -2,7 +2,7 @@ const nock = require('nock');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
 const {
-    createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer
+    createLayer, createMockDataset, ensureCorrectError, ensureCorrectLayer, mockGetUserFromToken
 } = require('./utils/helpers');
 const { createMockUser } = require('./utils/mocks');
 const { USERS: { USER, MANAGER, ADMIN } } = require('./utils/test.constants');
@@ -37,6 +37,7 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
+        mockGetUserFromToken(USER);
         const savedLayer = await new Layer(createLayer({
             userId: USER.id
         })).save();
@@ -45,9 +46,9 @@ describe('Get layers by id', () => {
         createMockUser([USER]);
 
         const list = await requester.get(`/api/v1/layer/${foundLayer._id}`)
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(USER)
             });
 
         list.body.should.have.property('data');
@@ -60,6 +61,7 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        mockGetUserFromToken(USER);
         const savedLayer = await new Layer(createLayer({
             userId: USER.id
         })).save();
@@ -68,9 +70,9 @@ describe('Get layers by id', () => {
         createMockUser([USER]);
 
         const list = await requester.get(`/api/v1/layer/${foundLayer._id}`)
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(USER)
             });
 
         list.body.should.have.property('data');
@@ -83,6 +85,7 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        mockGetUserFromToken(MANAGER);
         const savedLayer = await new Layer(createLayer({
             userId: USER.id
         })).save();
@@ -91,9 +94,9 @@ describe('Get layers by id', () => {
         createMockUser([USER]);
 
         const list = await requester.get(`/api/v1/layer/${foundLayer._id}`)
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(MANAGER)
             });
 
         list.body.should.have.property('data');
@@ -106,6 +109,7 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
+        mockGetUserFromToken(ADMIN);
         const savedLayer = await new Layer(createLayer({
             userId: USER.id
         })).save();
@@ -114,9 +118,9 @@ describe('Get layers by id', () => {
         createMockUser([USER]);
 
         const list = await requester.get(`/api/v1/layer/${foundLayer._id}`)
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(ADMIN)
             });
 
         list.body.should.have.property('data');

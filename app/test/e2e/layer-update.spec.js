@@ -5,7 +5,7 @@ const {
     USERS, LAYER
 } = require('./utils/test.constants');
 const {
-    createLayer, createMockDataset, ensureCorrectError, getUUID
+    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken
 } = require('./utils/helpers');
 
 nock.disableNetConnect();
@@ -21,8 +21,11 @@ const updateLayer = async ({
     const layer = createLayer(apps, datasetId, layerId);
     await new Layer(layer).save();
 
+    mockGetUserFromToken(role);
+
     return requester
-        .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}?loggedUser=${JSON.stringify(role)}`)
+        .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}`)
+        .set('Authorization', `Bearer abcd`)
         .send(layerToUpdate);
 };
 
@@ -58,12 +61,14 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer should return a 404 "Layer with id X doesn\'t exist" error when the layer doesn\'t exist', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         createMockDataset('123');
         const layer = createLayer(['rw'], '123', '321');
         await new Layer(layer).save();
 
         const datasetLayer = await requester
-            .delete(`${datasetPrefix}/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`${datasetPrefix}/123/layer/123`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -94,6 +99,7 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer should update should be successful and return the updated layer (happy case)', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         const LAYER_TO_UPDATE = {
             name: 'test update 123',
             application: ['rw'],
@@ -126,7 +132,8 @@ describe('Layer update', () => {
             });
 
         const datasetLayer = await requester
-            .patch(`${datasetPrefix}/${dataset}/layer/${layerId}?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .patch(`${datasetPrefix}/${dataset}/layer/${layerId}`)
+            .set('Authorization', `Bearer abcd`)
             .send(LAYER_TO_UPDATE);
 
         datasetLayer.status.should.equal(200);

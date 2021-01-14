@@ -2,7 +2,7 @@ const nock = require('nock');
 const Layer = require('models/layer.model');
 const chai = require('chai');
 const { getTestServer } = require('./utils/test-server');
-const { createLayer, ensureCorrectLayer } = require('./utils/helpers');
+const { createLayer, ensureCorrectLayer, mockGetUserFromToken } = require('./utils/helpers');
 const { createMockUser, createMockUserRole } = require('./utils/mocks');
 const {
     USERS: {
@@ -41,7 +41,6 @@ describe('Get layers', () => {
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
-
     it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (anon user)', async () => {
         await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
@@ -58,15 +57,17 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (ADMIN role)', async () => {
+        mockGetUserFromToken(ADMIN);
         await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userName: 'c', name: 'c' })).save();
         await new Layer(createLayer({ userName: 'd', name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            userName: 'a',
-            loggedUser: JSON.stringify(ADMIN)
-        });
+        const response = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                userName: 'a',
+            });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
@@ -87,91 +88,103 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by userRole should return an unfiltered list, as userRole should be ignored (ADMIN user)', async () => {
+        mockGetUserFromToken(ADMIN);
         await new Layer(createLayer({ userRole: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userRole: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userRole: 'c', name: 'c' })).save();
         await new Layer(createLayer({ userRole: 'd', name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            userRole: 'a',
-            loggedUser: JSON.stringify(ADMIN)
-        });
+        const response = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                userRole: 'a',
+            });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
     });
 
     it('Getting layers as ADMIN with query params user.role = ADMIN should return a list of layers created by ADMIN users (happy case)', async () => {
+        mockGetUserFromToken(ADMIN);
         const savedLayer = await new Layer(createLayer({ userId: ADMIN.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: USER.id })).save();
 
         createMockUserRole('ADMIN', ADMIN.id);
 
-        const list = await requester.get('/api/v1/layer').query({
-            'user.role': 'ADMIN',
-            loggedUser: JSON.stringify(ADMIN)
-        });
+        const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                'user.role': 'ADMIN',
+            });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as ADMIN with query params user.role = MANAGER should return a list of layers created by MANAGER users (happy case)', async () => {
+        mockGetUserFromToken(SUPERADMIN);
         const savedLayer = await new Layer(createLayer({ userId: MANAGER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: USER.id })).save();
 
         createMockUserRole('MANAGER', MANAGER.id);
 
-        const list = await requester.get('/api/v1/layer').query({
-            'user.role': 'MANAGER',
-            loggedUser: JSON.stringify(SUPERADMIN)
-        });
+        const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                'user.role': 'MANAGER',
+            });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as ADMIN with query params user.role = USER should return a list of layers created by USER (happy case)', async () => {
+        mockGetUserFromToken(ADMIN);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         createMockUserRole('USER', USER.id);
 
-        const list = await requester.get('/api/v1/layer').query({
-            'user.role': 'USER',
-            loggedUser: JSON.stringify(ADMIN)
-        });
+        const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                'user.role': 'USER',
+            });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as USER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
+        mockGetUserFromToken(USER);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
 
-        const list = await requester.get('/api/v1/layer').query({
-            'user.role': 'USER',
-            loggedUser: JSON.stringify(USER)
-        });
+        const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                'user.role': 'USER',
+            });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
     });
 
     it('Getting layers as MANAGER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
+        mockGetUserFromToken(MANAGER);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
 
-        const list = await requester.get('/api/v1/layer').query({
-            'user.role': 'USER',
-            loggedUser: JSON.stringify(MANAGER)
-        });
+        const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
+            .query({
+                'user.role': 'USER',
+            });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
         ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
@@ -199,15 +212,16 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        mockGetUserFromToken(USER);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
         const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(USER)
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
@@ -220,15 +234,16 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+        mockGetUserFromToken(MANAGER);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
         const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(MANAGER)
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
@@ -241,15 +256,16 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
+        mockGetUserFromToken(ADMIN);
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
         createMockUser([USER]);
 
         const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(ADMIN)
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
@@ -263,6 +279,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role, even if only partial data exists', async () => {
+        mockGetUserFromToken(ADMIN);
         const savedLayerOne = await new Layer(createLayer()).save();
         const savedLayerTwo = await new Layer(createLayer()).save();
         const savedLayerThree = await new Layer(createLayer()).save();
@@ -293,9 +310,9 @@ describe('Get layers', () => {
         }]);
 
         const list = await requester.get('/api/v1/layer')
+            .set('Authorization', `Bearer abcd`)
             .query({
                 includes: 'user',
-                loggedUser: JSON.stringify(ADMIN)
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
@@ -321,12 +338,13 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by user.role should not return a query param "usersRole" in the pagination links', async () => {
+        mockGetUserFromToken(ADMIN);
         await new Layer(createLayer()).save();
         createMockUserRole('ADMIN', ADMIN.id);
 
         const list = await requester
             .get('/api/v1/layer?user.role=ADMIN')
-            .query({ loggedUser: JSON.stringify(ADMIN) });
+            .set('Authorization', `Bearer abcd`);
 
         list.body.should.have.property('links').and.be.an('object');
         list.body.links.should.have.property('self').and.not.includes('usersRole=');
