@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { USERS } = require('./utils/test.constants');
 const {
-    createLayer, createMockDataset, ensureCorrectError, getUUID
+    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken
 } = require('./utils/helpers');
 
 nock.disableNetConnect();
@@ -19,9 +19,12 @@ const updateEnv = async ({
     const layer = createLayer({ applications: apps, dataset, _id: layerId });
     await new Layer(layer).save();
 
+    mockGetUserFromToken(role);
+
     return requester
         .patch(`/api/v1/layer/change-environment/${dataset}/${env}`)
-        .send({ loggedUser: role });
+        .set('Authorization', `Bearer abcd`)
+        .send({});
 };
 
 describe('Layer env update', () => {

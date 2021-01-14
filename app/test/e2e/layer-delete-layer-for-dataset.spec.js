@@ -3,7 +3,9 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./utils/test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
+const {
+    ensureCorrectError, createMockDataset, createLayer, mockGetUserFromToken
+} = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
 chai.should();
@@ -18,8 +20,11 @@ const deleteLayers = async (role) => {
     const layer = createLayer({ application: ['rw'], dataset: '123' });
     await new Layer(layer).save();
 
+    mockGetUserFromToken(role);
+
     return requester
-        .delete(`/api/v1/dataset/123/layer?loggedUser=${JSON.stringify(role)}`)
+        .delete(`/api/v1/dataset/123/layer`)
+        .set('Authorization', `Bearer abcd`)
         .send();
 };
 
@@ -68,6 +73,8 @@ describe('Delete all layers for a dataset', async () => {
     });
 
     it('Deleting all layers for a dataset be successful', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
+
         createMockDataset('123');
         const layer = createLayer({ application: ['rw'], dataset: '123' });
         await new Layer(layer).save();
@@ -97,7 +104,8 @@ describe('Delete all layers for a dataset', async () => {
             });
 
         const datasetLayers = await requester
-            .delete(`/api/v1/dataset/123/layer?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/api/v1/dataset/123/layer`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         datasetLayers.status.should.equal(200);

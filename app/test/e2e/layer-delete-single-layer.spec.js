@@ -2,7 +2,9 @@ const nock = require('nock');
 const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./utils/test-server');
-const { ensureCorrectError, createMockDataset, createLayer } = require('./utils/helpers');
+const {
+    ensureCorrectError, createMockDataset, createLayer, mockGetUserFromToken
+} = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
 nock.disableNetConnect();
@@ -15,8 +17,11 @@ const deleteLayer = async (role, layerId, apps = ['rw'], providedLayer) => {
     const layer = providedLayer || createLayer({ application: apps, dataset: layerId || '123', _id: layerId });
     await new Layer(layer).save();
 
+    mockGetUserFromToken(role);
+
     return requester
-        .delete(`/api/v1/dataset/123/layer/${layerId}?loggedUser=${JSON.stringify(role)}`)
+        .delete(`/api/v1/dataset/123/layer/${layerId}`)
+        .set('Authorization', `Bearer abcd`)
         .send();
 };
 
@@ -59,6 +64,8 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id while being authenticated as MANAGER that owns the layer should delete the specific layer in specific dataset (happy case)', async () => {
+        mockGetUserFromToken(USERS.MANAGER);
+
         createMockDataset('123');
 
         nock(process.env.CT_URL)
@@ -82,7 +89,8 @@ describe('Delete single layer by id', async () => {
         await new Layer(layer).save();
 
         const datasetLayer = await requester
-            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.MANAGER)}`)
+            .delete(`/api/v1/dataset/123/layer/123`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         datasetLayer.status.should.equal(200);
@@ -104,12 +112,15 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should return 404 "Layer with id X not found" error when the layer doesn\'t exist', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
+
         createMockDataset('123');
         const layer = createLayer({ application: ['rw'], dataset: '123', _id: '321' });
         await new Layer(layer).save();
 
         const datasetLayer = await requester
-            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/dataset/123/layer/123`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -117,6 +128,8 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should delete the specific layer in specific dataset (happy case)', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
+
         const layer = createLayer({ application: ['rw'], dataset: '123', _id: '123' });
         createMockDataset('123');
         await new Layer(layer).save();
@@ -146,7 +159,8 @@ describe('Delete single layer by id', async () => {
             });
 
         const datasetLayer = await requester
-            .delete(`/api/v1/dataset/123/layer/123?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/dataset/123/layer/123`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         datasetLayer.status.should.equal(200);

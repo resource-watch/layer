@@ -2,7 +2,7 @@ const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
-const { ensureCorrectError, createLayer } = require('./utils/helpers');
+const { ensureCorrectError, createLayer, mockGetUserFromToken } = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
 chai.should();
@@ -16,8 +16,11 @@ const expireLayerCache = async (role) => {
     const layer = createLayer({ application: ['rw'], _id: '123' });
     await new Layer(layer).save();
 
+    mockGetUserFromToken(role);
+
     return requester
-        .delete(`/api/v1/layer/123/expire-cache?loggedUser=${JSON.stringify(role)}`)
+        .delete(`/api/v1/layer/123/expire-cache`)
+        .set('Authorization', `Bearer abcd`)
         .send();
 };
 
@@ -49,6 +52,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a GEE layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
         const layer = createLayer({ provider: 'gee' });
         await new Layer(layer).save();
 
@@ -59,7 +63,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -67,6 +72,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a LOCA layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
         const layer = createLayer({ provider: 'loca' });
         await new Layer(layer).save();
 
@@ -77,7 +83,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -85,6 +92,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a NEXGDDP layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
@@ -95,7 +103,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.MICROSERVICE)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -103,6 +112,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a GEE layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         const layer = createLayer({ provider: 'gee' });
         await new Layer(layer).save();
 
@@ -113,7 +123,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -121,6 +132,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a LOCA layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         const layer = createLayer({ provider: 'loca' });
         await new Layer(layer).save();
 
@@ -131,7 +143,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -139,6 +152,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a NEXGDDP layer should return a 200 and the response from the proxied MS', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
@@ -149,7 +163,8 @@ describe('Expire layer cache', async () => {
             .reply(200, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(200);
@@ -157,6 +172,7 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a NEXGDDP layer should return the same response code as the proxied MS call', async () => {
+        mockGetUserFromToken(USERS.ADMIN);
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
@@ -167,7 +183,8 @@ describe('Expire layer cache', async () => {
             .reply(403, reply);
 
         const response = await requester
-            .delete(`/api/v1/layer/${layer._id}/expire-cache?loggedUser=${JSON.stringify(USERS.ADMIN)}`)
+            .delete(`/api/v1/layer/${layer._id}/expire-cache`)
+            .set('Authorization', `Bearer abcd`)
             .send();
 
         response.status.should.equal(403);
