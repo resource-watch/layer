@@ -5,10 +5,9 @@ const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const slug = require('slug');
 const RelationshipsService = require('services/relationships.service');
-const ctRegisterMicroservice = require('sd-ct-register-microservice-node');
+const { RWAPIMicroservice } = require('rw-api-microservice-node');
 
 const stage = process.env.NODE_ENV;
-
 
 class LayerService {
 
@@ -299,7 +298,7 @@ class LayerService {
 
     static async expireCacheTiles(layerId) {
         logger.info('[LayerService - expireCacheTiles]: Expiring cache of tiles');
-        await ctRegisterMicroservice.requestToMicroservice({
+        await RWAPIMicroservice.requestToMicroservice({
             uri: `/layer/${layerId}/expire-cache`,
             method: 'DELETE'
         });
@@ -307,7 +306,7 @@ class LayerService {
 
     static async deleteMetadata(datasetId, layerId) {
         logger.info('[LayerService - deleteMetadata]: Deleting layer metadata');
-        await ctRegisterMicroservice.requestToMicroservice({
+        await RWAPIMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
             method: 'DELETE'
         });

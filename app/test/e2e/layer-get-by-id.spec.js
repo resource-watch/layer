@@ -130,6 +130,9 @@ describe('Get layers by id', () => {
     });
 
     it('Getting layers by dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        nock(process.env.CT_URL)
+            .get(`/v1/dataset/321`)
+            .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
         const datasetLayers = await requester.get(`/api/v1/dataset/321/layer`);
         datasetLayers.status.should.equal(404);
         ensureCorrectError(datasetLayers.body, 'Dataset not found');

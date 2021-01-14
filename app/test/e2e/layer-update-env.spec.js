@@ -34,6 +34,10 @@ describe('Layer env update', () => {
     });
 
     it('Updating the env of a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        nock(process.env.CT_URL)
+            .get(`/v1/dataset/123`)
+            .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'123\' doesn\'t exist' }] });
+
         const envLayer = await requester.patch(`/api/v1/layer/change-environment/123/test`);
         envLayer.status.should.equal(404);
         ensureCorrectError(envLayer.body, 'Dataset not found');
