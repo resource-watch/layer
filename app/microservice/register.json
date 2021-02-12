@@ -22,7 +22,6 @@
     {
       "path": "/v1/dataset/:dataset/layer",
       "method": "POST",
-      "authenticated": true,
       "redirect": {
         "method": "POST",
         "path": "/api/v1/dataset/:dataset/layer"
@@ -55,7 +54,6 @@
     {
       "path": "/v1/dataset/:dataset/layer/:layer",
       "method": "PATCH",
-      "authenticated": true,
       "redirect": {
         "method": "PATCH",
         "path": "/api/v1/dataset/:dataset/layer/:layer"
@@ -64,7 +62,6 @@
     {
       "path": "/v1/dataset/:dataset/layer/:layer",
       "method": "DELETE",
-      "authenticated": true,
       "redirect": {
         "method": "DELETE",
         "path": "/api/v1/dataset/:dataset/layer/:layer"
@@ -73,7 +70,6 @@
     {
       "path": "/v1/dataset/:dataset/layer",
       "method": "DELETE",
-      "authenticated": true,
       "redirect": {
         "method": "DELETE",
         "path": "/api/v1/dataset/:dataset/layer"
@@ -82,7 +78,6 @@
     {
       "path": "/v1/layer/find-by-ids",
       "method": "POST",
-      "authenticated": true,
       "redirect": {
         "method": "POST",
         "path": "/api/v1/layer/find-by-ids"
@@ -91,7 +86,6 @@
     {
       "path": "/v1/layer/change-environment/:dataset/:env",
       "method": "PATCH",
-      "authenticated": true,
       "redirect": {
         "method": "PATCH",
         "path": "/api/v1/layer/change-environment/:dataset/:env"
@@ -100,7 +94,6 @@
     {
       "path": "/v1/layer/:layer/expire-cache",
       "method": "DELETE",
-      "authenticated": true,
       "redirect": {
         "method": "DELETE",
         "path": "/api/v1/layer/:layer/expire-cache"

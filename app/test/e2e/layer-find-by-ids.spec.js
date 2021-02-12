@@ -1,8 +1,8 @@
-/* eslint-disable no-unused-vars,no-undef */
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { createLayer } = require('./utils/helpers');
+const { createLayer, mockGetUserFromToken } = require('./utils/helpers');
+const { USERS } = require('./utils/test.constants');
 
 const { getTestServer } = require('./utils/test-server');
 
@@ -16,7 +16,6 @@ nock.enableNetConnect(process.env.HOST_IP);
 let layerOne;
 let layerTwo;
 
-
 describe('Find layers by IDs', () => {
 
     before(async () => {
@@ -29,9 +28,22 @@ describe('Find layers by IDs', () => {
         await Layer.deleteMany({}).exec();
     });
 
-    it('Find layers without ids in body returns a 400 error', async () => {
+    it('Find layers without being authenticated returns a 401', async () => {
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .send({});
+
+        response.status.should.equal(401);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Unauthorized`);
+    });
+
+    it('Find layers without ids in body returns a 400 error', async () => {
+        mockGetUserFromToken(USERS.USER);
+
+        const response = await requester
+            .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({});
 
         response.status.should.equal(400);
@@ -40,8 +52,11 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with empty id list returns an empty list (empty db)', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: []
             });
@@ -51,8 +66,11 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layer that does not exist returns an empty list (empty db)', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: ['abcd']
             });
@@ -62,8 +80,11 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layer that does not exist returns an empty list (empty db)', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: ['abcd']
             });
@@ -73,11 +94,14 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing a layer that exists returns only the listed layer', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: [layerOne.dataset]
             });
@@ -103,11 +127,14 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the listed layers (multiple results)', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: [layerOne.dataset, layerTwo.dataset]
             });
@@ -132,7 +159,6 @@ describe('Find layers by IDs', () => {
         responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
         responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
 
-
         responseLayerTwo.should.have.property('name').and.equal(layerTwo.name);
         responseLayerTwo.should.have.property('application').and.be.an('array').and.deep.equal(layerTwo.application);
         responseLayerTwo.should.have.property('dataset').and.equal(layerTwo.dataset);
@@ -149,11 +175,14 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'ids\'', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?ids=${layerTwo.dataset}`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: [layerOne.dataset]
             });
@@ -179,11 +208,14 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'user.role\'', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         layerOne = await new Layer(createLayer()).save();
         layerTwo = await new Layer(createLayer()).save();
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?user.role=FAKE`)
+            .set('Authorization', `Bearer abcd`)
             .send({
                 ids: [layerOne.dataset]
             });

@@ -404,19 +404,32 @@ const authorizationMiddleware = async (ctx, next) => {
     await next(); // SUPERADMIN is included here
 };
 
+const isAuthenticatedMiddleware = async (ctx, next) => {
+    logger.info(`Verifying if user is authenticated`);
+    const { query, body } = ctx.request;
+
+    const user = { ...(query.loggedUser ? JSON.parse(query.loggedUser) : {}), ...body.loggedUser };
+
+    if (!user || !user.id) {
+        ctx.throw(401, 'Unauthorized');
+        return;
+    }
+    await next();
+};
+
 router.get('/layer', LayerRouter.getAll);
 router.get('/layer/:layer', LayerRouter.get);
 router.get('/dataset/:dataset/layer', datasetValidationMiddleware, LayerRouter.getAll);
 
-router.post('/dataset/:dataset/layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.create);
+router.post('/dataset/:dataset/layer', isAuthenticatedMiddleware, datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.create);
 router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerRouter.get);
-router.patch('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
-router.delete('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
-router.delete('/dataset/:dataset/layer', datasetValidationMiddleware, isMicroservice, LayerRouter.deleteByDataset);
+router.patch('/dataset/:dataset/layer/:layer', isAuthenticatedMiddleware, datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
+router.delete('/dataset/:dataset/layer/:layer', isAuthenticatedMiddleware, datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
+router.delete('/dataset/:dataset/layer', isAuthenticatedMiddleware, datasetValidationMiddleware, isMicroservice, LayerRouter.deleteByDataset);
 
-router.delete('/layer/:layer/expire-cache', isMicroserviceOrAdmin, LayerRouter.expireCache);
+router.delete('/layer/:layer/expire-cache', isAuthenticatedMiddleware, isMicroserviceOrAdmin, LayerRouter.expireCache);
 
-router.post('/layer/find-by-ids', LayerRouter.getByIds);
-router.patch('/layer/change-environment/:dataset/:env', datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
+router.post('/layer/find-by-ids', isAuthenticatedMiddleware, LayerRouter.getByIds);
+router.patch('/layer/change-environment/:dataset/:env', isAuthenticatedMiddleware, datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
 
 module.exports = router;

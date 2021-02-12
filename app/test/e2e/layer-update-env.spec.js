@@ -36,20 +36,25 @@ describe('Layer env update', () => {
         requester = await getTestServer();
     });
 
+    it('Updating the env of a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
+        const envLayer = await requester.patch(`/api/v1/layer/change-environment/123/test`);
+        envLayer.status.should.equal(401);
+        ensureCorrectError(envLayer.body, 'Unauthorized');
+    });
+
     it('Updating the env of a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         nock(process.env.CT_URL)
             .get(`/v1/dataset/123`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'123\' doesn\'t exist' }] });
 
-        const envLayer = await requester.patch(`/api/v1/layer/change-environment/123/test`);
+        const envLayer = await requester
+            .patch(`/api/v1/layer/change-environment/123/test`)
+            .set('Authorization', `Bearer abcd`);
+
         envLayer.status.should.equal(404);
         ensureCorrectError(envLayer.body, 'Dataset not found');
-    });
-
-    it('Updating the env of a layer without being authenticated should return a 401 "Not authorized" error', async () => {
-        const envLayer = await updateEnv({ role: null });
-        envLayer.status.should.equal(401);
-        ensureCorrectError(envLayer.body, 'Not authorized');
     });
 
     it('Updating the env of a layer while being authenticated as ADMIN should return a 403 "Forbidden" error', async () => {

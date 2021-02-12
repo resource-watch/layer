@@ -38,20 +38,25 @@ describe('Layer update', () => {
         requester = await getTestServer();
     });
 
+    it('Updating a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
+        const datasetLayer = await requester.patch(`${datasetPrefix}/321/layer/123`);
+        datasetLayer.status.should.equal(401);
+        ensureCorrectError(datasetLayer.body, 'Unauthorized');
+    });
+
     it('Updating a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         nock(process.env.CT_URL)
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
-        const datasetLayer = await requester.patch(`${datasetPrefix}/321/layer/123`);
+        const datasetLayer = await requester
+            .patch(`${datasetPrefix}/321/layer/123`)
+            .set('Authorization', `Bearer abcd`);
+
         datasetLayer.status.should.equal(404);
         ensureCorrectError(datasetLayer.body, 'Dataset not found');
-    });
-
-    it('Updating a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
-        const datasetLayer = await updateLayer({ role: {} });
-        datasetLayer.status.should.equal(401);
-        ensureCorrectError(datasetLayer.body, 'Unauthorized');
     });
 
     it('Updating a layer while being authenticated as USER should return a 403 "Forbidden" error', async () => {

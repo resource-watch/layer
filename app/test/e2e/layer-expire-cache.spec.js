@@ -36,7 +36,7 @@ describe('Expire layer cache', async () => {
     it('Expiring layer cache without being authenticated should return a 401 "Not authorized" error', async () => {
         const datasetLayers = await requester.delete(`/api/v1/layer/123/expire-cache`);
         datasetLayers.status.should.equal(401);
-        ensureCorrectError(datasetLayers.body, 'Not authorized');
+        ensureCorrectError(datasetLayers.body, 'Unauthorized');
     });
 
     it('Expiring layer cache while being authenticated as USER should return a 403 "Forbidden" error', async () => {

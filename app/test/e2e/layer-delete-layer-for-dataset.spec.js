@@ -38,20 +38,24 @@ describe('Delete all layers for a dataset', async () => {
     });
 
     it('Deleting all layers for a dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
+        mockGetUserFromToken(USERS.USER);
+
         nock(process.env.CT_URL)
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
-        const datasetLayers = await requester.delete(`/api/v1/dataset/321/layer`);
+
+        const datasetLayers = await requester
+            .delete(`/api/v1/dataset/321/layer`)
+            .set('Authorization', `Bearer abcd`);
+
         datasetLayers.status.should.equal(404);
         ensureCorrectError(datasetLayers.body, 'Dataset not found');
     });
 
     it('Deleting all layers for a dataset without being authenticated should return a 401 "Not authorized" error', async () => {
-        createMockDataset('123');
-
         const datasetLayers = await requester.delete(`/api/v1/dataset/123/layer`);
         datasetLayers.status.should.equal(401);
-        ensureCorrectError(datasetLayers.body, 'Not authorized');
+        ensureCorrectError(datasetLayers.body, 'Unauthorized');
     });
 
     it('Deleting all layers for a dataset while being authenticated as USER should return a 403 "Forbidden" error', async () => {
