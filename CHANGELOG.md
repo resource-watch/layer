@@ -1,3 +1,7 @@
+## 22/02/2021
+
+- Update `rw-api-microservice-node` to fix issue with Fastly headers.
+
 ## 14/01/2021
 
 - Replace CT integration library
