@@ -62,7 +62,7 @@
     "lodash": "^4.17.19",
     "mongoose": "^5.7.11",
     "mongoose-paginate": "^5.0.3",
-    "rw-api-microservice-node": "^3.3.1",
+    "rw-api-microservice-node": "^3.3.3",
     "slug": "^1.1.0",
     "uuid": "^3.3.3"
   },
