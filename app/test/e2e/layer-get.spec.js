@@ -1,6 +1,7 @@
 const nock = require('nock');
 const Layer = require('models/layer.model');
 const chai = require('chai');
+const config = require('config');
 const { getTestServer } = require('./utils/test-server');
 const { createLayer, ensureCorrectLayer, mockGetUserFromToken } = require('./utils/helpers');
 const { createMockUser, createMockUserRole } = require('./utils/mocks');
@@ -24,6 +25,37 @@ describe('Get layers', () => {
         }
 
         requester = await getTestServer();
+    });
+
+    describe('Test pagination links', () => {
+        it('Get layers without referer header should be successful and use the request host', async () => {
+            const response = await requester
+                .get(`/api/v1/layer`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array');
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+        });
+
+        it('Get layers with referer header should be successful and use that header on the links on the response', async () => {
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .set('referer', `https://potato.com/get-me-all-the-data`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array');
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal('http://potato.com/v1/layer?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('prev').and.equal('http://potato.com/v1/layer?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('next').and.equal('http://potato.com/v1/layer?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('first').and.equal('http://potato.com/v1/layer?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('last').and.equal('http://potato.com/v1/layer?page[number]=1&page[size]=10');
+        });
     });
 
     it('Getting layers should return result empty result when no layers exist', async () => {

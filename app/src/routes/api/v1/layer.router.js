@@ -20,6 +20,14 @@ const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
     return a;
 }, []).join('&');
 
+const getHostForPaginationLink = (ctx) => {
+    if ('referer' in ctx.request.header) {
+        const url = new URL(ctx.request.header.referer);
+        return url.host;
+    }
+    return ctx.request.host;
+};
+
 class LayerRouter {
 
     static getUser(ctx) {
@@ -242,7 +250,7 @@ class LayerRouter {
         delete clonedQuery.usersRole;
         const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
         const apiVersion = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
-        const link = `${ctx.request.protocol}://${ctx.request.host}/${apiVersion}${ctx.request.path}${serializedQuery}`;
+        const link = `${ctx.request.protocol}://${getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;
         const layers = await LayerService.getAll(query, dataset, user);
         ctx.body = LayerSerializer.serialize(layers, link);
 
