@@ -214,13 +214,13 @@ describe('Get layers sorted by user fields', () => {
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
 
         // Mock requests for includes=user
-        fullUsers.map((user) => nock(process.env.CT_URL)
+        fullUsers.map((user) => nock(process.env.GATEWAY_URL)
             .post('/auth/user/find-by-ids', { ids: [user.id] })
             .reply(200, { data: user }));
 
         // Custom mock find-by-ids call
         const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .post('/auth/user/find-by-ids', { ids: userIds })
             .reply(200, { data: fullUsers });
 
@@ -256,13 +256,13 @@ describe('Get layers sorted by user fields', () => {
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
 
         // Mock requests for includes=user
-        fullUsers.map((user) => nock(process.env.CT_URL)
+        fullUsers.map((user) => nock(process.env.GATEWAY_URL)
             .post('/auth/user/find-by-ids', { ids: [user.id] })
             .reply(200, { data: user }));
 
         // Custom mock find-by-ids call
         const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .post('/auth/user/find-by-ids', { ids: userIds })
             .reply(200, { data: fullUsers });
 

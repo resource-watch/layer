@@ -21,7 +21,6 @@ describe('Get layers with includes tests', () => {
         requester = await getTestServer();
     });
 
-
     it('Get layers with includes vocabulary should return layer with associated vocabulary data (happy case)', async () => {
         const fakeLayerOne = await new Layer(createLayer()).save();
 
@@ -42,7 +41,7 @@ describe('Get layers with includes tests', () => {
             }
         ];
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/${fakeLayerOne.dataset}/layer/${fakeLayerOne._id}/vocabulary`)
             .reply(200, {
                 data: vocabularyResponse

@@ -47,7 +47,7 @@ describe('Layer create tests', () => {
             application: ['rw']
         };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
@@ -89,7 +89,7 @@ describe('Layer create tests', () => {
                 }
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .post(async (uri) => {
                 const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
@@ -261,7 +261,7 @@ describe('Layer create tests', () => {
             application: ['rw'],
         };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
@@ -303,7 +303,7 @@ describe('Layer create tests', () => {
                 }
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .post(async (uri) => {
                 const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);

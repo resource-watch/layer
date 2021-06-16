@@ -37,7 +37,7 @@ describe('Delete single layer by id', async () => {
     it('Deleting a single layer by id should return 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
         mockGetUserFromToken(USERS.USER);
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
@@ -72,17 +72,17 @@ describe('Delete single layer by id', async () => {
 
         createMockDataset('123');
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete('/v1/graph/layer/123')
             .once()
             .reply(200, {});
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete('/v1/layer/123/expire-cache')
             .once()
             .reply(200, {});
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete('/v1/dataset/123/layer/123/metadata')
             .once()
             .reply(200, {});
@@ -138,7 +138,7 @@ describe('Delete single layer by id', async () => {
         createMockDataset('123');
         await new Layer(layer).save();
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/graph/layer/${layer.dataset}`)
             .once()
             .reply(200, {
@@ -146,7 +146,7 @@ describe('Delete single layer by id', async () => {
                 data: []
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
             .once()
             .reply(200, {
@@ -154,7 +154,7 @@ describe('Delete single layer by id', async () => {
                 data: []
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/${layer._id}/expire-cache`)
             .once()
             .reply(200, {
