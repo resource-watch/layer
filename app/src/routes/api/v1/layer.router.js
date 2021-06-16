@@ -165,7 +165,7 @@ class LayerRouter {
                 ctx.throw(400, 'Layer provider does not support cache expiration');
             }
             const response = await RWAPIMicroservice.requestToMicroservice({
-                uri: `/layer/${layer.provider}/${layerId}/expire-cache`,
+                uri: `/v1/layer/${layer.provider}/${layerId}/expire-cache`,
                 method: 'DELETE',
                 json: true
             });

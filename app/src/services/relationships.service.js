@@ -11,7 +11,7 @@ class RelationshipsService {
                 if (includes.indexOf('vocabulary') > -1) {
                     // eslint-disable-next-line no-await-in-loop
                     const vocabularies = await RWAPIMicroservice.requestToMicroservice({
-                        uri: `/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary`,
+                        uri: `/v1/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary`,
                         method: 'GET',
                         json: true
                     });
@@ -26,7 +26,6 @@ class RelationshipsService {
                         body: {
                             ids: [layers[i].userId]
                         },
-                        version: false
                     });
 
                     if (!userData.data[0]) {
@@ -52,7 +51,6 @@ class RelationshipsService {
             uri: `/auth/user/find-by-ids`,
             method: 'POST',
             json: true,
-            version: false,
             body: { ids }
         });
 
@@ -64,7 +62,6 @@ class RelationshipsService {
             uri: `/auth/user/ids/${role}`,
             method: 'GET',
             json: true,
-            version: false
         });
         logger.debug('User ids', body.data);
         return body.data;
@@ -73,7 +70,7 @@ class RelationshipsService {
     static async getCollections(ids, userId) {
         try {
             const result = await RWAPIMicroservice.requestToMicroservice({
-                uri: `/collection/find-by-ids`,
+                uri: `/v1/collection/find-by-ids`,
                 method: 'POST',
                 json: true,
                 body: {
@@ -91,7 +88,7 @@ class RelationshipsService {
     static async getFavorites(app, userId) {
         try {
             const result = await RWAPIMicroservice.requestToMicroservice({
-                uri: `/favourite/find-by-user`,
+                uri: `/v1/favourite/find-by-user`,
                 method: 'POST',
                 json: true,
                 body: {

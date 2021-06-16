@@ -40,7 +40,7 @@ describe('Delete all layers for a dataset', async () => {
     it('Deleting all layers for a dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
         mockGetUserFromToken(USERS.USER);
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
@@ -83,7 +83,7 @@ describe('Delete all layers for a dataset', async () => {
         const layer = createLayer({ application: ['rw'], dataset: '123' });
         await new Layer(layer).save();
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/graph/layer/${layer.dataset}`)
             .once()
             .reply(200, {
@@ -91,7 +91,7 @@ describe('Delete all layers for a dataset', async () => {
                 data: []
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
             .once()
             .reply(200, {
@@ -99,7 +99,7 @@ describe('Delete all layers for a dataset', async () => {
                 data: []
             });
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/${layer.dataset}/expire-cache`)
             .once()
             .reply(200, {

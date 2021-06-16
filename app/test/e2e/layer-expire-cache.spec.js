@@ -58,7 +58,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -78,7 +78,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -98,7 +98,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -118,7 +118,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -138,7 +138,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -158,7 +158,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
@@ -178,7 +178,7 @@ describe('Expire layer cache', async () => {
 
         const reply = { result: 'OK' };
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(403, reply);
 

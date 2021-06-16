@@ -47,7 +47,7 @@ describe('Layer update', () => {
     it('Updating a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
         mockGetUserFromToken(USERS.USER);
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
@@ -128,7 +128,7 @@ describe('Layer update', () => {
         const layer = createLayer({ application: ['rw'], dataset, _id: layerId });
         await new Layer(layer).save();
 
-        nock(process.env.CT_URL)
+        nock(process.env.GATEWAY_URL)
             .delete(`/v1/layer/${layer._id}/expire-cache`)
             .once()
             .reply(200, {

@@ -299,7 +299,7 @@ class LayerService {
     static async expireCacheTiles(layerId) {
         logger.info('[LayerService - expireCacheTiles]: Expiring cache of tiles');
         await RWAPIMicroservice.requestToMicroservice({
-            uri: `/layer/${layerId}/expire-cache`,
+            uri: `/v1/layer/${layerId}/expire-cache`,
             method: 'DELETE'
         });
     }
@@ -307,7 +307,7 @@ class LayerService {
     static async deleteMetadata(datasetId, layerId) {
         logger.info('[LayerService - deleteMetadata]: Deleting layer metadata');
         await RWAPIMicroservice.requestToMicroservice({
-            uri: `/dataset/${datasetId}/layer/${layerId}/metadata`,
+            uri: `/v1/dataset/${datasetId}/layer/${layerId}/metadata`,
             method: 'DELETE'
         });
     }
