@@ -7,7 +7,7 @@
   },
   "mongodb": {
     "database": "layer_db_test",
-    "host": "mymachine",
+    "host": "localhost",
     "port": 27017
   }
 }

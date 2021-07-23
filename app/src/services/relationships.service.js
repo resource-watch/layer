@@ -1,17 +1,44 @@
 const logger = require('logger');
 const { RWAPIMicroservice } = require('rw-api-microservice-node');
 
+const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
+    a.push(`${k}=${encodeURIComponent(obj[k])}`);
+    return a;
+}, []).join('&');
+
 class RelationshipsService {
 
-    static async getRelationships(layers, includes, user) {
+    /**
+     * - Clones the query object
+     * - Strips a few things that should not be passed over to other MSs
+     * - Encodes query into a URL param format
+     *
+     * @TODO: rawQuery is passed by reference, so we should evaluate cloning at an earlier point
+     *
+     * @param rawQuery
+     * @returns {string}
+     */
+    static prepareAndFormatQuery(rawQuery) {
+        const query = { ...rawQuery };
+
+        delete query.includes;
+        return serializeObjToQuery(query);
+    }
+
+    static async getRelationships(layers, includes, user, query = {}) {
         logger.info(`Getting relationships of layers: ${layers}`);
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < layers.length; i++) {
             try {
                 if (includes.indexOf('vocabulary') > -1) {
+
+                    let uriQuery = RelationshipsService.prepareAndFormatQuery(query);
+                    if (uriQuery.length > 0) {
+                        uriQuery = `?${uriQuery}`;
+                    }
                     // eslint-disable-next-line no-await-in-loop
                     const vocabularies = await RWAPIMicroservice.requestToMicroservice({
-                        uri: `/v1/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary`,
+                        uri: `/v1/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary${uriQuery}`,
                         method: 'GET',
                         json: true
                     });

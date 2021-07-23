@@ -334,12 +334,12 @@ class LayerService {
         pages = { ...pages };
         if (includes.length > 0) {
             logger.debug('Finding relationships');
-            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user);
+            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user, { ...query });
         }
         return pages;
     }
 
-    static async getByDataset(resource) {
+    static async getByDataset(resource, requestQuery) {
         logger.info(`[LayerService - getByDataset] Getting layers for datasets with ids ${resource.ids}`);
         if (resource.app) {
             if (resource.app.indexOf('@') >= 0) {
@@ -352,11 +352,19 @@ class LayerService {
                 };
             }
         }
+
         const query = {
             dataset: {
                 $in: resource.ids
             }
         };
+
+        if (requestQuery.env) {
+            query.env = {
+                $in: requestQuery.env.split(',')
+            };
+        }
+
         if (resource.app) {
             query.application = resource.app;
         }

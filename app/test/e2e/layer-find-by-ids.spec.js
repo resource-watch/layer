@@ -174,6 +174,40 @@ describe('Find layers by IDs', () => {
         responseLayerTwo.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
+    it('Find layers with id list containing layers that exist returns the listed layers with certain env (single result)', async () => {
+        mockGetUserFromToken(USERS.USER);
+
+        layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+        layerTwo = await new Layer(createLayer()).save();
+
+        const response = await requester
+            .post(`/api/v1/layer/find-by-ids`)
+            .set('Authorization', `Bearer abcd`)
+            .send({
+                ids: [layerOne.dataset, layerTwo.dataset],
+                env: 'custom'
+            });
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(1);
+
+        const responseLayerOne = response.body.data[0].attributes;
+
+        responseLayerOne.should.have.property('name').and.equal(layerOne.name);
+        responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
+        responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
+        responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
+        responseLayerOne.should.have.property('protected').and.equal(false);
+        responseLayerOne.should.have.property('default').and.equal(true);
+        responseLayerOne.should.have.property('published').and.equal(true);
+
+        responseLayerOne.layerConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.legendConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.applicationConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
+        responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
+    });
+
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'ids\'', async () => {
         mockGetUserFromToken(USERS.USER);
 

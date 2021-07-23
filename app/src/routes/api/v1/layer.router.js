@@ -289,7 +289,7 @@ class LayerRouter {
         if (typeof resource.ids === 'string') {
             resource.ids = resource.ids.split(',').map((elem) => elem.trim());
         }
-        const result = await LayerService.getByDataset(resource);
+        const result = await LayerService.getByDataset(resource, { ...ctx.request.query });
         ctx.body = LayerSerializer.serialize(result, null, true);
     }
 
