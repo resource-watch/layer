@@ -196,6 +196,7 @@ describe('Find layers by IDs', () => {
         responseLayerOne.should.have.property('name').and.equal(layerOne.name);
         responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
         responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
+        responseLayerOne.should.have.property('env').and.equal('custom');
         responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
         responseLayerOne.should.have.property('protected').and.equal(false);
         responseLayerOne.should.have.property('default').and.equal(true);
