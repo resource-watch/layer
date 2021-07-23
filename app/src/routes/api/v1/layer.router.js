@@ -274,22 +274,27 @@ class LayerRouter {
     }
 
     static async getByIds(ctx) {
-        if (ctx.request.body.layer) {
-            ctx.request.body.ids = ctx.request.body.layer.ids;
+        const { body } = ctx.request;
+        if (body.layer) {
+            body.ids = body.layer.ids;
         }
-        if (!ctx.request.body.ids) {
+        if (!body.ids) {
             ctx.throw(400, 'Bad request - Missing \'ids\' from request body');
             return;
         }
-        logger.info(`[LayerRouter] Getting layers for datasets with id: ${ctx.request.body.ids}`);
+        logger.info(`[LayerRouter] Getting layers for datasets with id: ${body.ids}`);
         const resource = {
-            ids: ctx.request.body.ids,
-            app: ctx.request.body.app
+            ids: body.ids,
+            app: body.app,
+            env: body.env
         };
         if (typeof resource.ids === 'string') {
             resource.ids = resource.ids.split(',').map((elem) => elem.trim());
         }
-        const result = await LayerService.getByDataset(resource, { ...ctx.request.query });
+        if (typeof resource.env === 'string') {
+            resource.env = resource.env.split(',').map((elem) => elem.trim());
+        }
+        const result = await LayerService.getByDataset(resource);
         ctx.body = LayerSerializer.serialize(result, null, true);
     }
 

@@ -339,7 +339,7 @@ class LayerService {
         return pages;
     }
 
-    static async getByDataset(resource, requestQuery) {
+    static async getByDataset(resource) {
         logger.info(`[LayerService - getByDataset] Getting layers for datasets with ids ${resource.ids}`);
         if (resource.app) {
             if (resource.app.indexOf('@') >= 0) {
@@ -353,17 +353,18 @@ class LayerService {
             }
         }
 
+        if (!resource.env) { // default value
+            resource.env = 'production';
+        }
+
         const query = {
             dataset: {
                 $in: resource.ids
+            },
+            env: {
+                $in: resource.env
             }
         };
-
-        if (requestQuery.env) {
-            query.env = {
-                $in: requestQuery.env.split(',')
-            };
-        }
 
         if (resource.app) {
             query.application = resource.app;
