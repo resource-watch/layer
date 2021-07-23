@@ -13,8 +13,6 @@ class RelationshipsService {
      * - Strips a few things that should not be passed over to other MSs
      * - Encodes query into a URL param format
      *
-     * @TODO: rawQuery is passed by reference, so we should evaluate cloning at an earlier point
-     *
      * @param rawQuery
      * @returns {string}
      */

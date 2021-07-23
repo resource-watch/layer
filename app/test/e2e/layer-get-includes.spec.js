@@ -58,6 +58,7 @@ describe('Get layers with includes tests', () => {
     });
 
     it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env', async () => {
+        await new Layer(createLayer()).save();
         const fakeLayerOne = await new Layer(createLayer({ env: 'custom' })).save();
 
         const vocabularyResponse = [
@@ -79,7 +80,10 @@ describe('Get layers with includes tests', () => {
         ];
 
         nock(process.env.GATEWAY_URL)
-            .get(`/v1/dataset/${fakeLayerOne.dataset}/layer/${fakeLayerOne._id}/vocabulary?env=custom`)
+            .get(`/v1/dataset/${fakeLayerOne.dataset}/layer/${fakeLayerOne._id}/vocabulary`)
+            .query({
+                env: 'custom'
+            })
             .reply(200, {
                 data: vocabularyResponse
             });
