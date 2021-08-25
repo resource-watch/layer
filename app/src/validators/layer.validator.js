@@ -91,6 +91,24 @@ class LayerValidator {
         return errorMessage;
     }
 
+    static async validateFindById(koaObj) {
+        logger.info('[LayerValidator] Validating find by id body');
+        koaObj.checkBody('env')
+            .optional()
+            .notBlank()
+            .check((v) => LayerValidator.isString(v), 'must be a string');
+        koaObj.checkBody('ids')
+            .check((v) => LayerValidator.isArray(v), 'must be an array')
+            .check((ids) => ids.some((id) => LayerValidator.isString(id)), 'must be an array of strings');
+
+        logger.debug(koaObj.errors);
+        if (koaObj.errors) {
+            logger.error('Error validating find by id body');
+            throw new LayerNotValid(koaObj.errors);
+        }
+        return true;
+    }
+
     static async validateCreation(koaObj) {
         logger.info('Validating Layer Creation');
         koaObj.checkBody('name').notEmpty().check((name) => LayerValidator.notEmptyString(name), 'can not be empty');

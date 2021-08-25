@@ -278,10 +278,6 @@ class LayerRouter {
         if (body.layer) {
             body.ids = body.layer.ids;
         }
-        if (!body.ids) {
-            ctx.throw(400, 'Bad request - Missing \'ids\' from request body');
-            return;
-        }
         logger.info(`[LayerRouter] Getting layers for datasets with id: ${body.ids}`);
         const resource = {
             ids: body.ids,
@@ -351,6 +347,21 @@ const datasetValidationMiddleware = async (ctx, next) => {
     } catch (err) {
         ctx.throw(404, 'Dataset not found');
     }
+    await next();
+};
+
+const findByIdValidationMiddleware = async (ctx, next) => {
+    logger.info(`[LayerRouter] Validating find by id`);
+    try {
+        await LayerValidator.validateFindById(ctx);
+    } catch (err) {
+        if (err instanceof LayerNotValid) {
+            ctx.throw(400, err.getMessages());
+            return;
+        }
+        throw err;
+    }
+
     await next();
 };
 
@@ -445,7 +456,7 @@ router.delete('/dataset/:dataset/layer', isAuthenticatedMiddleware, datasetValid
 
 router.delete('/layer/:layer/expire-cache', isAuthenticatedMiddleware, isMicroserviceOrAdmin, LayerRouter.expireCache);
 
-router.post('/layer/find-by-ids', isAuthenticatedMiddleware, LayerRouter.getByIds);
+router.post('/layer/find-by-ids', isAuthenticatedMiddleware, findByIdValidationMiddleware, LayerRouter.getByIds);
 router.patch('/layer/change-environment/:dataset/:env', isAuthenticatedMiddleware, datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
 
 module.exports = router;
