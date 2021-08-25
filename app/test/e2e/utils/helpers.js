@@ -113,29 +113,80 @@ const createLayer = (anotherData = {}) => {
     };
 };
 
-const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) => {
-    receivedLayer.id.should.equal(createdLayer._id);
-    receivedLayer.type.should.equal('layer');
-    receivedLayer.should.have.property('attributes').and.instanceOf(Object);
+const createVocabulary = (layerId) => ({
+    _id: getUUID(),
+    type: 'vocabulary',
+    attributes: {
+        resource: {
+            id: layerId,
+            type: 'layer'
+        },
+        id: getUUID(),
+        tags: [
+            'daily',
+            'near_real_time',
+            'geospatial',
+            'raster',
+            'forest',
+            'fire'
+        ],
+        application: 'rw'
+    }
+});
 
-    delete createdLayer._id;
-    delete createdLayer.__v;
-    delete createdLayer.status;
+// const ensureCorrectLayer = (receivedLayer, createdLayer, additionalData = {}) => {
+//     receivedLayer.id.should.equal(createdLayer._id);
+//     receivedLayer.type.should.equal('layer');
+//     receivedLayer.should.have.property('attributes').and.instanceOf(Object);
+//
+//     delete createdLayer._id;
+//     delete createdLayer.__v;
+//     delete createdLayer.status;
+//
+//     createdLayer.interactionConfig = {};
+//
+//     const expectedLayer = {
+//         ...createdLayer,
+//         createdAt: createdLayer.createdAt.toISOString(),
+//         updatedAt: createdLayer.updatedAt.toISOString(),
+//         ...additionalData,
+//         staticImageConfig: {},
+//         applicationConfig: {}
+//     };
+//     // remove fields which are not present to user from response body;
+//     delete expectedLayer._id;
+//
+//     receivedLayer.attributes.should.deep.equal(expectedLayer);
+// };
 
-    createdLayer.interactionConfig = {};
+const ensureCorrectLayer = (actualLayerModel, expectedLayer) => {
+    const layer = { ...expectedLayer, ...expectedLayer.attributes };
+    delete layer.attributes;
+    delete layer.type;
 
-    const expectedLayer = {
-        ...createdLayer,
-        createdAt: createdLayer.createdAt.toISOString(),
-        updatedAt: createdLayer.updatedAt.toISOString(),
-        ...additionalData,
-        staticImageConfig: {},
-        applicationConfig: {}
-    };
-    // remove fields which are not present to user from response body;
-    delete expectedLayer._id;
+    let actualLayer = actualLayerModel;
+    if (actualLayerModel.toObject) {
+        actualLayer = actualLayerModel.toObject();
+    }
+    if (!actualLayer.applicationConfig) {
+        actualLayer.applicationConfig = {};
+    }
+    if (!actualLayer.interactionConfig) {
+        actualLayer.interactionConfig = {};
+    }
+    if (!actualLayer.staticImageConfig) {
+        actualLayer.staticImageConfig = {};
+    }
+    actualLayer.id = actualLayer._id;
+    actualLayer.updatedAt = actualLayer.updatedAt.toISOString();
+    actualLayer.createdAt = actualLayer.createdAt.toISOString();
+    // eslint-disable-next-line no-underscore-dangle
+    delete actualLayer.__v;
+    delete actualLayer._id;
+    delete actualLayer.userName;
+    delete actualLayer.userRole;
 
-    receivedLayer.attributes.should.deep.equal(expectedLayer);
+    actualLayer.should.deep.equal(layer);
 };
 
 const mockGetUserFromToken = (userProfile) => {
@@ -149,6 +200,7 @@ module.exports = {
     createMockDataset,
     ensureCorrectError,
     getUUID,
+    createVocabulary,
     ensureCorrectLayer,
     mockGetUserFromToken
 };

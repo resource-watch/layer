@@ -14,7 +14,15 @@ const createMockUserRole = (role, userID) => nock(process.env.GATEWAY_URL)
     .get(`/auth/user/ids/${role}`)
     .reply(200, { data: [userID] });
 
+const createMockVocabulary = (mockVocabulary, datasetId, layerId, query = {}) => nock(process.env.GATEWAY_URL)
+    .get(`/v1/dataset/${datasetId}/layer/${layerId}/vocabulary`)
+    .query(query)
+    .reply(200, {
+        data: mockVocabulary,
+    });
+
 module.exports = {
     createMockUser,
-    createMockUserRole
+    createMockUserRole,
+    createMockVocabulary
 };

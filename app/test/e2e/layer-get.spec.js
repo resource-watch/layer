@@ -3,8 +3,10 @@ const Layer = require('models/layer.model');
 const chai = require('chai');
 const config = require('config');
 const { getTestServer } = require('./utils/test-server');
-const { createLayer, ensureCorrectLayer, mockGetUserFromToken } = require('./utils/helpers');
-const { createMockUser, createMockUserRole } = require('./utils/mocks');
+const {
+    createLayer, ensureCorrectLayer, mockGetUserFromToken, createVocabulary
+} = require('./utils/helpers');
+const { createMockUser, createMockUserRole, createMockVocabulary } = require('./utils/mocks');
 const {
     USERS: {
         USER, MANAGER, ADMIN, SUPERADMIN
@@ -193,7 +195,7 @@ describe('Get layers', () => {
 
         const list = await requester.get('/api/v1/layer');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (anon user)', async () => {
@@ -274,7 +276,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers as ADMIN with query params user.role = MANAGER should return a list of layers created by MANAGER users (happy case)', async () => {
@@ -292,7 +294,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers as ADMIN with query params user.role = USER should return a list of layers created by USER (happy case)', async () => {
@@ -310,7 +312,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length(1);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers as USER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
@@ -326,7 +328,7 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers as MANAGER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
@@ -342,153 +344,304 @@ describe('Get layers', () => {
             });
 
         list.body.should.have.property('data').and.be.an('array').and.length(2);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
-    it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
-        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
-        const foundLayer = await Layer.findById(savedLayer._id);
+    describe('Includes', () => {
+        it('Get layers includes vocabulary from custom env without filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary not filtered by the custom env', async () => {
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const vocabulary = createVocabulary(layerOne._id);
+            createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id);
 
-        createMockUser([USER]);
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .query({ includes: 'vocabulary', env: 'custom' });
 
-        const list = await requester.get('/api/v1/layer')
-            .query({
-                includes: 'user'
-            });
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&page[number]=1&page[size]=10`);
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+            const responseLayerOne = response.body.data[0];
 
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name
-            }
+            ensureCorrectLayer({
+                ...layerOne.toObject(),
+                vocabulary
+            }, responseLayerOne);
         });
-    });
 
-    it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        mockGetUserFromToken(USER);
-        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
-        const foundLayer = await Layer.findById(savedLayer._id);
+        it('Get layers includes vocabulary from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env', async () => {
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const vocabulary = createVocabulary(layerOne._id);
+            createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id, { env: 'custom' });
 
-        createMockUser([USER]);
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .query({ includes: 'vocabulary', env: 'custom', filterIncludesByEnv: true });
 
-        const list = await requester.get('/api/v1/layer')
-            .set('Authorization', `Bearer abcd`)
-            .query({
-                includes: 'user',
-            });
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name
-            }
+            const responseLayerOne = response.body.data[0];
+
+            ensureCorrectLayer({
+                ...layerOne.toObject(),
+                vocabulary
+            }, responseLayerOne);
         });
-    });
 
-    it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-        mockGetUserFromToken(MANAGER);
-        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
-        const foundLayer = await Layer.findById(savedLayer._id);
+        it('Get layers includes vocabulary and metadata from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env, but metadata is not filtered', async () => {
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const vocabulary = createVocabulary(layerOne._id);
+            createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id, { env: 'custom' });
 
-        createMockUser([USER]);
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .query({ includes: ['vocabulary'].join(','), env: 'custom', filterIncludesByEnv: true });
 
-        const list = await requester.get('/api/v1/layer')
-            .set('Authorization', `Bearer abcd`)
-            .query({
-                includes: 'user',
-            });
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name
-            }
+            const responseLayerOne = response.body.data[0];
+
+            ensureCorrectLayer({
+                ...layerOne.toObject(),
+                vocabulary
+            }, responseLayerOne);
         });
-    });
 
-    it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
-        const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
-        const foundLayer = await Layer.findById(savedLayer._id);
+        it('Get layers includes vocabulary from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env (multi-env)', async () => {
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const layerTwo = await new Layer(createLayer({ env: 'potato' })).save();
+            const vocabulary = createVocabulary(layerOne._id);
+            createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id, { env: 'custom,potato' });
+            createMockVocabulary(vocabulary, layerTwo.dataset, layerTwo._id, { env: 'custom,potato' });
 
-        createMockUser([USER]);
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .query({ includes: 'vocabulary', env: 'custom,potato', filterIncludesByEnv: true });
 
-        const list = await requester.get('/api/v1/layer')
-            .set('Authorization', `Bearer abcd`)
-            .query({
-                includes: 'user',
-            });
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(2);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom%2Cpotato&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom%2Cpotato&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom%2Cpotato&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom%2Cpotato&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?includes=vocabulary&env=custom%2Cpotato&filterIncludesByEnv=true&page[number]=1&page[size]=10`);
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data[0], foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name,
-                role: USER.role
-            }
+            ensureCorrectLayer({
+                ...layerOne.toObject(),
+                vocabulary
+            }, response.body.data[0]);
+            ensureCorrectLayer({
+                ...layerTwo.toObject(),
+                vocabulary
+            }, response.body.data[1]);
         });
-    });
 
-    it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role, even if only partial data exists', async () => {
-        mockGetUserFromToken(ADMIN);
-        const savedLayerOne = await new Layer(createLayer()).save();
-        const savedLayerTwo = await new Layer(createLayer()).save();
-        const savedLayerThree = await new Layer(createLayer()).save();
-        const foundLayerOne = await Layer.findById(savedLayerOne._id);
-        const foundLayerTwo = await Layer.findById(savedLayerTwo._id);
-        const foundLayerThree = await Layer.findById(savedLayerThree._id);
+        it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
+            const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
+            const foundLayer = await Layer.findById(savedLayer._id);
 
-        createMockUser([{
-            ...USER,
-            id: foundLayerOne.userId,
-            email: 'user-one@control-tower.org',
-            name: 'test user',
-            role: 'USER'
-        }]);
-        createMockUser([{
-            ...MANAGER,
-            id: foundLayerTwo.userId,
-            name: undefined,
-            email: 'user-two@control-tower.org',
-            role: 'MANAGER'
-        }]);
-        createMockUser([{
-            ...ADMIN,
-            id: foundLayerThree.userId,
-            email: undefined,
-            name: 'user three',
-            role: 'MANAGER'
-        }]);
+            createMockUser([USER]);
 
-        const list = await requester.get('/api/v1/layer')
-            .set('Authorization', `Bearer abcd`)
-            .query({
-                includes: 'user',
-            });
+            const list = await requester.get('/api/v1/layer')
+                .query({
+                    includes: 'user'
+                });
 
-        list.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerOne.id), foundLayerOne.toObject(), {
-            user: {
+            list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+
+            ensureCorrectLayer({
+                ...foundLayer.toObject(),
+                ...{
+                    user: {
+                        email: USER.email,
+                        name: USER.name
+                    }
+                }
+            }, list.body.data[0],);
+        });
+
+        it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+            mockGetUserFromToken(USER);
+            const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
+            const foundLayer = await Layer.findById(savedLayer._id);
+
+            createMockUser([USER]);
+
+            const list = await requester.get('/api/v1/layer')
+                .set('Authorization', `Bearer abcd`)
+                .query({
+                    includes: 'user',
+                });
+
+            list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+            ensureCorrectLayer({
+                ...foundLayer.toObject(),
+                ...{
+                    user: {
+                        email: USER.email,
+                        name: USER.name
+                    }
+                }
+            }, list.body.data[0],);
+        });
+
+        it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
+            mockGetUserFromToken(MANAGER);
+            const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
+            const foundLayer = await Layer.findById(savedLayer._id);
+
+            createMockUser([USER]);
+
+            const list = await requester.get('/api/v1/layer')
+                .set('Authorization', `Bearer abcd`)
+                .query({
+                    includes: 'user',
+                });
+
+            list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+            ensureCorrectLayer({
+                ...foundLayer.toObject(),
+                ...{
+                    user: {
+                        email: USER.email,
+                        name: USER.name
+                    }
+                }
+            }, list.body.data[0],);
+        });
+
+        it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
+            mockGetUserFromToken(ADMIN);
+            const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
+            const foundLayer = await Layer.findById(savedLayer._id);
+
+            createMockUser([USER]);
+
+            const list = await requester.get('/api/v1/layer')
+                .set('Authorization', `Bearer abcd`)
+                .query({
+                    includes: 'user',
+                });
+
+            list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+            ensureCorrectLayer({
+                ...foundLayer.toObject(),
+                ...{
+                    user: {
+                        email: USER.email,
+                        name: USER.name,
+                        role: USER.role
+                    }
+                }
+            }, list.body.data[0],);
+        });
+
+        it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role, even if only partial data exists', async () => {
+            mockGetUserFromToken(ADMIN);
+            const savedLayerOne = await new Layer(createLayer()).save();
+            const savedLayerTwo = await new Layer(createLayer()).save();
+            const savedLayerThree = await new Layer(createLayer()).save();
+            const foundLayerOne = await Layer.findById(savedLayerOne._id);
+            const foundLayerTwo = await Layer.findById(savedLayerTwo._id);
+            const foundLayerThree = await Layer.findById(savedLayerThree._id);
+
+            createMockUser([{
+                ...USER,
+                id: foundLayerOne.userId,
                 email: 'user-one@control-tower.org',
                 name: 'test user',
                 role: 'USER'
-            }
-        });
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerTwo.id), foundLayerTwo.toObject(), {
-            user: {
+            }]);
+            createMockUser([{
+                ...MANAGER,
+                id: foundLayerTwo.userId,
+                name: undefined,
                 email: 'user-two@control-tower.org',
                 role: 'MANAGER'
-            }
-        });
-        ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerThree.id), foundLayerThree.toObject(), {
-            user: {
+            }]);
+            createMockUser([{
+                ...ADMIN,
+                id: foundLayerThree.userId,
+                email: undefined,
                 name: 'user three',
                 role: 'MANAGER'
-            }
+            }]);
+
+            const list = await requester.get('/api/v1/layer')
+                .set('Authorization', `Bearer abcd`)
+                .query({
+                    includes: 'user',
+                });
+
+            list.body.should.have.property('data').and.be.an('array').and.length.above(0);
+            ensureCorrectLayer({
+                ...foundLayerOne.toObject(),
+                ...{
+                    user: {
+                        email: 'user-one@control-tower.org',
+                        name: 'test user',
+                        role: 'USER'
+                    }
+                }
+            }, list.body.data.find((layer) => layer.id === foundLayerOne.id));
+            ensureCorrectLayer({
+                ...foundLayerTwo.toObject(),
+                ...{
+                    user: {
+                        email: 'user-two@control-tower.org',
+                        role: 'MANAGER'
+                    }
+                }
+            }, list.body.data.find((layer) => layer.id === foundLayerTwo.id));
+            ensureCorrectLayer({
+                ...foundLayerThree.toObject(),
+                ...{
+                    user: {
+                        name: 'user three',
+                        role: 'MANAGER'
+                    }
+                }
+            }, list.body.data.find((layer) => layer.id === foundLayerThree.id));
+
+            // ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerOne.id), foundLayerOne.toObject(), {
+            //     user: {
+            //         email: 'user-one@control-tower.org',
+            //         name: 'test user',
+            //         role: 'USER'
+            //     }
+            // });
+            // ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerTwo.id), foundLayerTwo.toObject(), {
+            //     user: {
+            //         email: 'user-two@control-tower.org',
+            //         role: 'MANAGER'
+            //     }
+            // });
+            // ensureCorrectLayer(list.body.data.find((layer) => layer.id === foundLayerThree.id), foundLayerThree.toObject(), {
+            //     user: {
+            //         name: 'user three',
+            //         role: 'MANAGER'
+            //     }
+            // });
         });
     });
 

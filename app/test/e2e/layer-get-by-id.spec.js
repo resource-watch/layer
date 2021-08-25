@@ -33,7 +33,7 @@ describe('Get layers by id', () => {
 
         const layer = await requester.get(`/api/v1/layer/${foundLayer._id}`);
         layer.status.should.equal(200);
-        ensureCorrectLayer(layer.body.data, foundLayer.toObject());
+        ensureCorrectLayer(foundLayer.toObject(), layer.body.data);
     });
 
     it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
@@ -52,12 +52,16 @@ describe('Get layers by id', () => {
             });
 
         list.body.should.have.property('data');
-        ensureCorrectLayer(list.body.data, foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name
+
+        ensureCorrectLayer({
+            ...foundLayer.toObject(),
+            ...{
+                user: {
+                    email: USER.email,
+                    name: USER.name
+                }
             }
-        });
+        }, list.body.data);
     });
 
     it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
@@ -76,12 +80,15 @@ describe('Get layers by id', () => {
             });
 
         list.body.should.have.property('data');
-        ensureCorrectLayer(list.body.data, foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name
+        ensureCorrectLayer({
+            ...foundLayer.toObject(),
+            ...{
+                user: {
+                    email: USER.email,
+                    name: USER.name
+                }
             }
-        });
+        }, list.body.data);
     });
 
     it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
@@ -100,12 +107,15 @@ describe('Get layers by id', () => {
             });
 
         list.body.should.have.property('data');
-        ensureCorrectLayer(list.body.data, foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name,
+        ensureCorrectLayer({
+            ...foundLayer.toObject(),
+            ...{
+                user: {
+                    email: USER.email,
+                    name: USER.name
+                }
             }
-        });
+        }, list.body.data);
     });
 
     it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
@@ -124,13 +134,16 @@ describe('Get layers by id', () => {
             });
 
         list.body.should.have.property('data');
-        ensureCorrectLayer(list.body.data, foundLayer.toObject(), {
-            user: {
-                email: USER.email,
-                name: USER.name,
-                role: USER.role
+        ensureCorrectLayer({
+            ...foundLayer.toObject(),
+            ...{
+                user: {
+                    email: USER.email,
+                    name: USER.name,
+                    role: USER.role
+                }
             }
-        });
+        }, list.body.data);
     });
 
     it('Getting layers by dataset should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
@@ -153,7 +166,10 @@ describe('Get layers by id', () => {
         const datasetLayers = await requester.get(`/api/v1/dataset/123/layer`);
         datasetLayers.status.should.equal(200);
         datasetLayers.body.should.have.property('data').and.be.an('array').and.length.above(0);
-        ensureCorrectLayer(datasetLayers.body.data[0], foundLayer.toObject());
+        ensureCorrectLayer(
+            foundLayer.toObject(),
+            datasetLayers.body.data[0]
+        );
     });
 
     afterEach(async () => {

@@ -4,6 +4,7 @@ const Layer = require('models/layer.model');
 const { createLayer } = require('./utils/helpers');
 
 const { getTestServer } = require('./utils/test-server');
+const { createMockVocabulary } = require('./utils/mocks');
 
 chai.should();
 
@@ -57,7 +58,7 @@ describe('Get layers with includes tests', () => {
         response.body.data[0].attributes.should.have.property('vocabulary').and.be.an('array').and.deep.equal(vocabularyResponse);
     });
 
-    it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env', async () => {
+    it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env (includes not filtered)', async () => {
         await new Layer(createLayer()).save();
         const fakeLayerOne = await new Layer(createLayer({ env: 'custom' })).save();
 
@@ -79,17 +80,48 @@ describe('Get layers with includes tests', () => {
             }
         ];
 
-        nock(process.env.GATEWAY_URL)
-            .get(`/v1/dataset/${fakeLayerOne.dataset}/layer/${fakeLayerOne._id}/vocabulary`)
-            .query({
-                env: 'custom'
-            })
-            .reply(200, {
-                data: vocabularyResponse
-            });
+        createMockVocabulary(vocabularyResponse, fakeLayerOne.dataset, fakeLayerOne._id);
 
         const response = await requester.get(`/api/v1/layer`).query({
             includes: 'vocabulary',
+            env: 'custom'
+        });
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').with.lengthOf(1);
+        response.body.should.have.property('links').and.be.an('object');
+
+        response.body.data[0].should.have.property('attributes');
+        response.body.data[0].attributes.should.have.property('vocabulary').and.be.an('array').and.deep.equal(vocabularyResponse);
+    });
+
+    it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env (includes filtered)', async () => {
+        await new Layer(createLayer()).save();
+        const fakeLayerOne = await new Layer(createLayer({ env: 'custom' })).save();
+
+        const vocabularyResponse = [
+            {
+                id: 'resourcewatch',
+                type: 'vocabulary',
+                env: 'custom',
+                attributes: {
+                    tags: [
+                        'inuncoast',
+                        'rp0002',
+                        'historical',
+                        'nosub'
+                    ],
+                    name: 'resourcewatch',
+                    application: 'rw'
+                }
+            }
+        ];
+
+        createMockVocabulary(vocabularyResponse, fakeLayerOne.dataset, fakeLayerOne._id, { env: 'custom' });
+
+        const response = await requester.get(`/api/v1/layer`).query({
+            includes: 'vocabulary',
+            filterIncludesByEnv: true,
             env: 'custom'
         });
 
