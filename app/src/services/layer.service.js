@@ -353,18 +353,17 @@ class LayerService {
             }
         }
 
-        if (!resource.env) { // default value
-            resource.env = 'production';
-        }
-
         const query = {
             dataset: {
                 $in: resource.ids
-            },
-            env: {
-                $in: resource.env
             }
         };
+
+        if (resource.env) { // default value
+            query.env = {
+                $in: resource.env
+            };
+        }
 
         if (resource.app) {
             query.application = resource.app;

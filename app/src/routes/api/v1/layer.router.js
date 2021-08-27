@@ -273,7 +273,7 @@ class LayerRouter {
         ctx.set('cache', cache.join(' '));
     }
 
-    static async getByIds(ctx) {
+    static async findByIds(ctx) {
         const { body } = ctx.request;
         if (body.layer) {
             body.ids = body.layer.ids;
@@ -456,7 +456,7 @@ router.delete('/dataset/:dataset/layer', isAuthenticatedMiddleware, datasetValid
 
 router.delete('/layer/:layer/expire-cache', isAuthenticatedMiddleware, isMicroserviceOrAdmin, LayerRouter.expireCache);
 
-router.post('/layer/find-by-ids', isAuthenticatedMiddleware, findByIdValidationMiddleware, LayerRouter.getByIds);
+router.post('/layer/find-by-ids', isAuthenticatedMiddleware, findByIdValidationMiddleware, LayerRouter.findByIds);
 router.patch('/layer/change-environment/:dataset/:env', isAuthenticatedMiddleware, datasetValidationMiddleware, isMicroservice, LayerRouter.updateEnvironment);
 
 module.exports = router;

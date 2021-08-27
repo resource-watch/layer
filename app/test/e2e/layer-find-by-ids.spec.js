@@ -172,64 +172,114 @@ describe('Find layers by IDs', () => {
         responseLayerTwo.staticImageConfig.should.be.an.instanceOf(Object);
     });
 
-    it('Find layers by dataset id with single env filter returns the existing layers filtered by env (single result)', async () => {
-        mockGetUserFromToken(USERS.USER);
+    describe('Environment', () => {
+        it('Find layers by dataset id with no env filter returns the existing layers not filtered by env', async () => {
+            mockGetUserFromToken(USERS.USER);
 
-        const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
-        const layerTwo = await new Layer(createLayer()).save();
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const layerTwo = await new Layer(createLayer()).save();
 
-        const response = await requester
-            .post(`/api/v1/layer/find-by-ids`)
-            .set('Authorization', `Bearer abcd`)
-            .send({
-                ids: [layerOne.dataset, layerTwo.dataset],
-                env: 'custom'
-            });
+            const response = await requester
+                .post(`/api/v1/layer/find-by-ids`)
+                .set('Authorization', `Bearer abcd`)
+                .send({
+                    ids: [layerOne.dataset, layerTwo.dataset],
+                });
 
-        response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(2);
 
-        const responseLayerOne = response.body.data[0].attributes;
+            const responseLayerOne = response.body.data[0].attributes;
+            const responseLayerTwo = response.body.data[1].attributes;
 
-        responseLayerOne.should.have.property('name').and.equal(layerOne.name);
-        responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
-        responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
-        responseLayerOne.should.have.property('env').and.equal('custom');
-        responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
-        responseLayerOne.should.have.property('protected').and.equal(false);
-        responseLayerOne.should.have.property('default').and.equal(true);
-        responseLayerOne.should.have.property('published').and.equal(true);
+            responseLayerOne.should.have.property('name').and.equal(layerOne.name);
+            responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
+            responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
+            responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
+            responseLayerOne.should.have.property('protected').and.equal(false);
+            responseLayerOne.should.have.property('default').and.equal(true);
+            responseLayerOne.should.have.property('published').and.equal(true);
 
-        responseLayerOne.layerConfig.should.be.an.instanceOf(Object);
-        responseLayerOne.legendConfig.should.be.an.instanceOf(Object);
-        responseLayerOne.applicationConfig.should.be.an.instanceOf(Object);
-        responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
-        responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
-    });
+            responseLayerOne.layerConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.legendConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.applicationConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
 
-    it('Find layers by dataset id with multiple env filter returns the existing layers filtered by env (multiple results)', async () => {
-        mockGetUserFromToken(USERS.USER);
+            responseLayerTwo.should.have.property('name').and.equal(layerTwo.name);
+            responseLayerTwo.should.have.property('application').and.be.an('array').and.deep.equal(layerTwo.application);
+            responseLayerTwo.should.have.property('dataset').and.equal(layerTwo.dataset);
+            responseLayerTwo.should.have.property('slug').and.equal(layerTwo.slug);
+            responseLayerTwo.should.have.property('protected').and.equal(false);
+            responseLayerTwo.should.have.property('default').and.equal(true);
+            responseLayerTwo.should.have.property('published').and.equal(true);
 
-        const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
-        await new Layer(createLayer({ env: 'potato', dataset: layerOne.dataset })).save();
-        const layerThree = await new Layer(createLayer({ env: 'production', dataset: layerOne.dataset })).save();
-        const layerFour = await new Layer(createLayer({ env: 'custom' })).save();
-        await new Layer(createLayer({ env: 'potato', dataset: layerFour.dataset })).save();
-        const layerSix = await new Layer(createLayer({ env: 'production', dataset: layerFour.dataset })).save();
+            responseLayerTwo.layerConfig.should.be.an.instanceOf(Object);
+            responseLayerTwo.legendConfig.should.be.an.instanceOf(Object);
+            responseLayerTwo.applicationConfig.should.be.an.instanceOf(Object);
+            responseLayerTwo.interactionConfig.should.be.an.instanceOf(Object);
+            responseLayerTwo.staticImageConfig.should.be.an.instanceOf(Object);
+        });
 
-        const response = await requester
-            .post(`/api/v1/layer/find-by-ids`)
-            .set('Authorization', `Bearer abcd`)
-            .send({
-                ids: [layerOne.dataset, layerFour.dataset, getUUID()],
-                env: 'production,custom'
-            });
+        it('Find layers by dataset id with single env filter returns the existing layers filtered by env (single result)', async () => {
+            mockGetUserFromToken(USERS.USER);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array').and.length(4);
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            const layerTwo = await new Layer(createLayer()).save();
 
-        const ids = response.body.data.map((layer) => layer.id);
-        ids.sort().should.deep.equal([layerOne.id, layerThree.id, layerFour.id, layerSix.id].sort());
+            const response = await requester
+                .post(`/api/v1/layer/find-by-ids`)
+                .set('Authorization', `Bearer abcd`)
+                .send({
+                    ids: [layerOne.dataset, layerTwo.dataset],
+                    env: 'custom'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+
+            const responseLayerOne = response.body.data[0].attributes;
+
+            responseLayerOne.should.have.property('name').and.equal(layerOne.name);
+            responseLayerOne.should.have.property('application').and.be.an('array').and.deep.equal(layerOne.application);
+            responseLayerOne.should.have.property('dataset').and.equal(layerOne.dataset);
+            responseLayerOne.should.have.property('env').and.equal('custom');
+            responseLayerOne.should.have.property('slug').and.equal(layerOne.slug);
+            responseLayerOne.should.have.property('protected').and.equal(false);
+            responseLayerOne.should.have.property('default').and.equal(true);
+            responseLayerOne.should.have.property('published').and.equal(true);
+
+            responseLayerOne.layerConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.legendConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.applicationConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.interactionConfig.should.be.an.instanceOf(Object);
+            responseLayerOne.staticImageConfig.should.be.an.instanceOf(Object);
+        });
+
+        it('Find layers by dataset id with multiple env filter returns the existing layers filtered by env (multiple results)', async () => {
+            mockGetUserFromToken(USERS.USER);
+
+            const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
+            await new Layer(createLayer({ env: 'potato', dataset: layerOne.dataset })).save();
+            const layerThree = await new Layer(createLayer({ env: 'production', dataset: layerOne.dataset })).save();
+            const layerFour = await new Layer(createLayer({ env: 'custom' })).save();
+            await new Layer(createLayer({ env: 'potato', dataset: layerFour.dataset })).save();
+            const layerSix = await new Layer(createLayer({ env: 'production', dataset: layerFour.dataset })).save();
+
+            const response = await requester
+                .post(`/api/v1/layer/find-by-ids`)
+                .set('Authorization', `Bearer abcd`)
+                .send({
+                    ids: [layerOne.dataset, layerFour.dataset, getUUID()],
+                    env: 'production,custom'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(4);
+
+            const ids = response.body.data.map((layer) => layer.id);
+            ids.sort().should.deep.equal([layerOne.id, layerThree.id, layerFour.id, layerSix.id].sort());
+        });
     });
 
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'ids\'', async () => {
