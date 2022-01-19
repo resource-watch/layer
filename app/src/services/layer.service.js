@@ -6,6 +6,7 @@ const LayerProtected = require('errors/layerProtected.error');
 const slug = require('slug');
 const RelationshipsService = require('services/relationships.service');
 const { RWAPIMicroservice } = require('rw-api-microservice-node');
+const ScreenshotService = require('services/screenshot.service');
 
 const stage = process.env.NODE_ENV;
 
@@ -156,6 +157,7 @@ class LayerService {
             protected: layer.protected,
             userId: user.id,
             env: layer.env || 'production',
+            thumbnailUrl: layer.thumbnailUrl,
             layerConfig: layer.layerConfig,
             legendConfig: layer.legendConfig,
             interactionConfig: layer.interactionConfig,
@@ -172,6 +174,9 @@ class LayerService {
                 throw new Error(err);
             }
         }
+
+        LayerService.generateThumbnail(newLayer.id);
+
         return newLayer;
     }
 
@@ -200,6 +205,7 @@ class LayerService {
         currentLayer.interactionConfig = layer.interactionConfig || currentLayer.interactionConfig;
         currentLayer.applicationConfig = layer.applicationConfig || currentLayer.applicationConfig;
         currentLayer.staticImageConfig = layer.staticImageConfig || currentLayer.staticImageConfig;
+        currentLayer.thumbnailUrl = layer.thumbnailUrl || currentLayer.thumbnailUrl;
         currentLayer.updatedAt = new Date();
         if (layer.protected === false || layer.protected === true) {
             currentLayer.protected = layer.protected;
@@ -207,12 +213,34 @@ class LayerService {
         logger.info(`[DBACCESS-SAVE]: layer`);
         const newLayer = await currentLayer.save();
 
+        LayerService.generateThumbnail(newLayer.id);
+
         try {
             await LayerService.expireCacheTiles(id, currentLayer._id);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
+
         return newLayer;
+    }
+
+    static async generateThumbnail(id) {
+        logger.debug('[LayerService]: Creating thumbnail');
+        let thumbURL = '';
+        try {
+            const layerThumbnail = await ScreenshotService.takeLayerScreenshot(id);
+            thumbURL = layerThumbnail.data.layerThumbnail;
+        } catch (err) {
+            logger.error(`Error generating layer thumbnail: ${err.message}`);
+        }
+
+        try {
+            const layer = await Layer.findById(id).exec();
+            layer.thumbnailUrl = thumbURL;
+            layer.save();
+        } catch (err) {
+            logger.error(`Error updating layer after thumbnail generation: ${err.message}`);
+        }
     }
 
     static async updateEnvironment(dataset, env) {

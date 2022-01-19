@@ -17,6 +17,7 @@ class LayerSerializer {
                 default: el.default,
                 protected: el.protected,
                 published: el.published,
+                thumbnailUrl: el.thumbnailUrl,
                 env: el.env,
                 layerConfig: el.layerConfig || {},
                 legendConfig: el.legendConfig || {},

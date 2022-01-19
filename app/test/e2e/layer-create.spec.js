@@ -4,7 +4,7 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { USERS } = require('./utils/test.constants');
 const { getTestServer } = require('./utils/test-server');
-const { mockGetUserFromToken } = require('./utils/helpers');
+const { mockGetUserFromToken, mockWebshot } = require('./utils/helpers');
 
 chai.should();
 
@@ -226,6 +226,7 @@ describe('Layer create tests', () => {
             });
 
         mockGetUserFromToken(USERS.ADMIN);
+        mockWebshot();
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
             .set('Authorization', `Bearer abcd`)
@@ -439,6 +440,7 @@ describe('Layer create tests', () => {
                 };
             });
 
+        mockWebshot();
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
             .set('Authorization', `Bearer abcd`)
