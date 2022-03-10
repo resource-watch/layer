@@ -1,11 +1,11 @@
-FROM node:12-alpine
+FROM node:16-alpine
 MAINTAINER info@vizzuality.com
 
 ENV NAME layer
 ENV USER microservice
 
 RUN apk update && apk upgrade && \
-    apk add --no-cache --update bash git openssh python alpine-sdk
+    apk add --no-cache --update bash git openssh python3 alpine-sdk
 
 RUN addgroup $USER && adduser -s /bin/bash -D -G $USER $USER
 
