@@ -91,6 +91,7 @@ const createLayer = (anotherData = {}) => {
         dataset: getUUID(),
         slug: `layer-${uuid}`,
         env: 'production',
+        thumbnailUrl: 'http://the-default-thumbnail.com/image.png',
         layerConfig,
         legendConfig: {
             type: 'cluster',
@@ -195,6 +196,13 @@ const mockGetUserFromToken = (userProfile) => {
         .reply(200, userProfile);
 };
 
+const mockWebshot = (success = true, responseData = {}) => {
+    const data = { layerThumbnail: 'http://thumbnail-url.com/file.png', ...responseData };
+    nock(process.env.GATEWAY_URL)
+        .post((uri) => uri.match(/\/v1\/webshot\/layer\/(\w|-)*\/thumbnail/))
+        .reply(success ? 200 : 500, { data });
+};
+
 module.exports = {
     createLayer,
     createMockDataset,
@@ -202,5 +210,6 @@ module.exports = {
     getUUID,
     createVocabulary,
     ensureCorrectLayer,
-    mockGetUserFromToken
+    mockGetUserFromToken,
+    mockWebshot
 };

@@ -5,7 +5,7 @@ const {
     USERS, LAYER
 } = require('./utils/test.constants');
 const {
-    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken
+    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken, mockWebshot
 } = require('./utils/helpers');
 
 nock.disableNetConnect();
@@ -136,6 +136,7 @@ describe('Layer update', () => {
                 data: []
             });
 
+        mockWebshot();
         const datasetLayer = await requester
             .patch(`${datasetPrefix}/${dataset}/layer/${layerId}`)
             .set('Authorization', `Bearer abcd`)

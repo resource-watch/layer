@@ -130,6 +130,9 @@ class LayerValidator {
         // connectorUrl
         koaObj.checkBody('default').optional().toBoolean();
         koaObj.checkBody('published').optional().toBoolean();
+        koaObj.checkBody('thumbnailUrl')
+            .optional()
+            .check((v) => LayerValidator.isString(v), 'must be a string');
         koaObj.checkBody('layerConfig').optional().check((layerConfig) => LayerValidator.isObject(layerConfig), 'must be an object');
         koaObj.checkBody('legendConfig').optional().check((legendConfig) => LayerValidator.isObject(legendConfig), 'must be an object');
         koaObj.checkBody('interactionConfig').optional().check((interactionConfig) => LayerValidator.isObject(interactionConfig), 'must be an object');
