@@ -24,6 +24,7 @@ const Layer = new Schema({
     default: { type: Boolean, required: false, default: false },
     protected: { type: Boolean, required: false, default: false },
     published: { type: Boolean, required: false, default: true },
+    thumbnailUrl: { type: String, required: false, trim: true },
     env: {
         type: String, required: true, default: 'production', trim: true
     },

@@ -7,13 +7,13 @@ ENV USER microservice
 RUN apk update && apk upgrade && \
     apk add --no-cache --update bash git openssh python3 alpine-sdk
 
-RUN addgroup $USER && adduser -s /bin/bash -D -G $USER $USER
-
-RUN yarn global add grunt-cli bunyan
+RUN addgroup $USER && useradd -ms /bin/bash $USER -g $USER
+RUN yarn global add bunyan grunt
 
 RUN mkdir -p /opt/$NAME
 COPY package.json /opt/$NAME/package.json
-RUN cd /opt/$NAME && yarn install
+COPY yarn.lock /opt/$NAME/yarn.lock
+RUN cd /opt/$NAME && yarn
 
 COPY entrypoint.sh /opt/$NAME/entrypoint.sh
 COPY config /opt/$NAME/config
