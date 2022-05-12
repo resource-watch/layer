@@ -1,11 +1,11 @@
-FROM node:12-bullseye
+FROM node:16.4.0-alpine
 MAINTAINER info@vizzuality.com
 
 ENV NAME layer
 ENV USER microservice
 
-RUN apt-get update -y && apt-get upgrade -y && \
-    apt-get install -y bash git ssh python3 make
+RUN apk update && apk upgrade && \
+    apk add --no-cache --update bash git openssh python3 alpine-sdk
 
 RUN addgroup $USER && useradd -ms /bin/bash $USER -g $USER
 RUN yarn global add bunyan grunt
