@@ -92,6 +92,43 @@ describe('Get layers', () => {
     });
 
     describe('Environment', () => {
+        it('Get layers with no query param should return only production env layers', async () => {
+            await new Layer(createLayer({ env: 'production' })).save();
+            await new Layer(createLayer({ env: 'custom' })).save();
+            await new Layer(createLayer({ env: 'potato' })).save();
+            const response = await requester
+                .get(`/api/v1/layer`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?page[number]=1&page[size]=10`);
+        });
+
+        it('Get layers with query param all env filter should return layers from every env', async () => {
+            await new Layer(createLayer({ env: 'production' })).save();
+            await new Layer(createLayer({ env: 'custom' })).save();
+            await new Layer(createLayer({ env: 'potato' })).save();
+            const response = await requester
+                .get(`/api/v1/layer`)
+                .query({
+                    env: 'all'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(3);
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?env=all&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?env=all&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?env=all&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?env=all&page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('service.port')}/v1/layer?env=all&page[number]=1&page[size]=10`);
+        });
+
         it('Get layers with default production env filter', async () => {
             const response = await requester
                 .get(`/api/v1/layer`)
