@@ -84,9 +84,14 @@ class LayerService {
                 query.userId = { ...query.userId || {}, $in: query[param] };
                 delete query.usersRole;
             } else if (param === 'env') {
-                query[param] = {
-                    $in: query[param].split(',')
-                };
+                if (query[param] === 'all') {
+                    logger.debug('Applying all environments filter');
+                    delete query.env;
+                } else {
+                    query.env = {
+                        $in: query[param].split(',')
+                    };
+                }
             }
 
         });
