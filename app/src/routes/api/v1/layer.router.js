@@ -154,6 +154,19 @@ class LayerRouter {
         }
     }
 
+    static async deleteByUserId(ctx) {
+        const userIdToDelete = ctx.params.userId;
+
+        logger.info(`[LayerRouter] Deleting all layer for user with id: ${userIdToDelete}`);
+        try {
+            const deletedLayers = await LayerService.deleteByUserId(userIdToDelete);
+            ctx.body = LayerSerializer.serialize(deletedLayers);
+        } catch (err) {
+            logger.error(`Error deleting layers from user ${userIdToDelete}`, err);
+            ctx.throw(500, `Error deleting layers from user ${userIdToDelete}`);
+        }
+    }
+
     static async expireCache(ctx) {
         const layerId = ctx.params.layer;
 
@@ -444,6 +457,24 @@ const isAuthenticatedMiddleware = async (ctx, next) => {
     await next();
 };
 
+const deleteResourceAuthorizationMiddleware = async (ctx, next) => {
+    logger.info(`[LayerRouter] Checking authorization`);
+    const user = LayerRouter.getUser(ctx);
+    const userFromParam = ctx.params.userId;
+
+    if (user.id === 'microservice' || user.role === 'ADMIN') {
+        await next();
+        return;
+    }
+
+    if (userFromParam === user.id) {
+        await next();
+        return;
+    }
+
+    ctx.throw(403, 'Forbidden');
+};
+
 router.get('/layer', LayerRouter.getAll);
 router.get('/layer/:layer', LayerRouter.get);
 router.get('/dataset/:dataset/layer', datasetValidationMiddleware, LayerRouter.getAll);
@@ -453,6 +484,8 @@ router.get('/dataset/:dataset/layer/:layer', datasetValidationMiddleware, LayerR
 router.patch('/dataset/:dataset/layer/:layer', isAuthenticatedMiddleware, datasetValidationMiddleware, validationMiddleware, authorizationMiddleware, LayerRouter.update);
 router.delete('/dataset/:dataset/layer/:layer', isAuthenticatedMiddleware, datasetValidationMiddleware, authorizationMiddleware, LayerRouter.delete);
 router.delete('/dataset/:dataset/layer', isAuthenticatedMiddleware, datasetValidationMiddleware, isMicroservice, LayerRouter.deleteByDataset);
+
+router.delete('/layer/by-user/:userId', isAuthenticatedMiddleware, deleteResourceAuthorizationMiddleware, LayerRouter.deleteByUserId);
 
 router.delete('/layer/:layer/expire-cache', isAuthenticatedMiddleware, isMicroserviceOrAdmin, LayerRouter.expireCache);
 
