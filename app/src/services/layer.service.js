@@ -329,6 +329,38 @@ class LayerService {
         return layers;
     }
 
+    static async deleteByUserId(userId) {
+        logger.debug(`[LayerService]: Delete layers for user with id:  ${userId}`);
+
+        const userLayers = await LayerService.getAll({ userId, env: 'all' });
+        if (userLayers.docs) {
+
+            await Promise.all(userLayers.docs.map(async (layer) => {
+                const currentLayerId = layer._id;
+                const currentLayerDatasetId = layer.dataset;
+                logger.info(`[DBACCESS-DELETE]: layer.id: ${currentLayerId}`);
+                await layer.remove();
+                logger.debug('[LayerService]: Deleting in graph');
+                try {
+                    await GraphService.deleteLayer(currentLayerId);
+                } catch (err) {
+                    logger.error('Error removing layer of the graph', err);
+                }
+                try {
+                    await LayerService.deleteMetadata(currentLayerDatasetId, currentLayerId);
+                } catch (err) {
+                    logger.error('Error removing metadata of the layer', err);
+                }
+                try {
+                    await LayerService.expireCacheTiles(currentLayerId);
+                } catch (err) {
+                    logger.error('Error expiring cache', err);
+                }
+            }));
+        }
+        return userLayers;
+    }
+
     static async expireCacheTiles(layerId) {
         logger.info('[LayerService - expireCacheTiles]: Expiring cache of tiles');
         await RWAPIMicroservice.requestToMicroservice({
