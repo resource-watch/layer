@@ -62,12 +62,12 @@ describe('Delete all layers for a user', async () => {
             .set('Authorization', `Bearer abcd`)
             .send();
         response.status.should.equal(200);
-        response.body.data[0].attributes.name.should.equal(layerOne.name);
-        response.body.data[0].attributes.userId.should.equal(layerOne.userId);
-        response.body.data[0].attributes.dataset.should.equal(layerOne.dataset);
-        response.body.data[1].attributes.name.should.equal(layerTwo.name);
-        response.body.data[1].attributes.userId.should.equal(layerTwo.userId);
-        response.body.data[1].attributes.dataset.should.equal(layerTwo.dataset);
+        response.body.deletedLayers.data[0].attributes.name.should.equal(layerOne.name);
+        response.body.deletedLayers.data[0].attributes.userId.should.equal(layerOne.userId);
+        response.body.deletedLayers.data[0].attributes.dataset.should.equal(layerOne.dataset);
+        response.body.deletedLayers.data[1].attributes.name.should.equal(layerTwo.name);
+        response.body.deletedLayers.data[1].attributes.userId.should.equal(layerTwo.userId);
+        response.body.deletedLayers.data[1].attributes.dataset.should.equal(layerTwo.dataset);
 
         const findLayerByUser = await Layer.find({ userId: { $eq: USERS.USER.id } }).exec();
         findLayerByUser.should.be.an('array').with.lengthOf(0);
@@ -100,12 +100,12 @@ describe('Delete all layers for a user', async () => {
             .set('Authorization', `Bearer abcd`)
             .send();
         response.status.should.equal(200);
-        response.body.data[0].attributes.name.should.equal(layerOne.name);
-        response.body.data[0].attributes.userId.should.equal(layerOne.userId);
-        response.body.data[0].attributes.dataset.should.equal(layerOne.dataset);
-        response.body.data[1].attributes.name.should.equal(layerTwo.name);
-        response.body.data[1].attributes.userId.should.equal(layerTwo.userId);
-        response.body.data[1].attributes.dataset.should.equal(layerTwo.dataset);
+        response.body.deletedLayers.data[0].attributes.name.should.equal(layerOne.name);
+        response.body.deletedLayers.data[0].attributes.userId.should.equal(layerOne.userId);
+        response.body.deletedLayers.data[0].attributes.dataset.should.equal(layerOne.dataset);
+        response.body.deletedLayers.data[1].attributes.name.should.equal(layerTwo.name);
+        response.body.deletedLayers.data[1].attributes.userId.should.equal(layerTwo.userId);
+        response.body.deletedLayers.data[1].attributes.dataset.should.equal(layerTwo.dataset);
 
         const findLayerByUser = await Layer.find({ userId: { $eq: USERS.USER.id } }).exec();
         findLayerByUser.should.be.an('array').with.lengthOf(0);
@@ -138,12 +138,12 @@ describe('Delete all layers for a user', async () => {
             .set('Authorization', `Bearer abcd`)
             .send();
         response.status.should.equal(200);
-        response.body.data[0].attributes.name.should.equal(layerOne.name);
-        response.body.data[0].attributes.userId.should.equal(layerOne.userId);
-        response.body.data[0].attributes.dataset.should.equal(layerOne.dataset);
-        response.body.data[1].attributes.name.should.equal(layerTwo.name);
-        response.body.data[1].attributes.userId.should.equal(layerTwo.userId);
-        response.body.data[1].attributes.dataset.should.equal(layerTwo.dataset);
+        response.body.deletedLayers.data[0].attributes.name.should.equal(layerOne.name);
+        response.body.deletedLayers.data[0].attributes.userId.should.equal(layerOne.userId);
+        response.body.deletedLayers.data[0].attributes.dataset.should.equal(layerOne.dataset);
+        response.body.deletedLayers.data[1].attributes.name.should.equal(layerTwo.name);
+        response.body.deletedLayers.data[1].attributes.userId.should.equal(layerTwo.userId);
+        response.body.deletedLayers.data[1].attributes.dataset.should.equal(layerTwo.dataset);
 
         const findLayerByUser = await Layer.find({ userId: { $eq: USERS.USER.id } }).exec();
         findLayerByUser.should.be.an('array').with.lengthOf(0);
@@ -165,7 +165,58 @@ describe('Delete all layers for a user', async () => {
             .send();
 
         response.status.should.equal(200);
-        response.body.data.should.be.an('array').with.lengthOf(0);
+        response.body.deletedLayers.data.should.be.an('array').with.lengthOf(0);
+    });
+
+    it('Deleting layers while some of them are protected should only delete unprotected ones', async () => {
+        mockGetUserFromToken(USERS.USER);
+
+        const layerOne = await new Layer(createLayer({
+            env: 'staging', application: ['rw'], dataset: '123', userId: USERS.USER.id
+        })).save();
+        const layerTwo = await new Layer(createLayer({
+            env: 'production', application: ['gfw'], dataset: '123', userId: USERS.USER.id
+        })).save();
+        const layerThree = await new Layer(createLayer({
+            env: 'production', application: ['gfw'], dataset: '123', userId: USERS.USER.id, protected: true
+        })).save();
+        const fakeLayerFromAdmin = await new Layer(createLayer({
+            env: 'staging', application: ['rw'], dataset: '123', userId: USERS.ADMIN.id
+        })).save();
+        const fakeLayerFromManager = await new Layer(createLayer({
+            env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
+        })).save();
+
+        const deleteResponse = await requester
+            .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
+            .set('Authorization', `Bearer abcd`)
+            .send();
+
+        deleteResponse.status.should.equal(200);
+        deleteResponse.body.deletedLayers.should.have.property('data').with.lengthOf(2);
+        deleteResponse.body.protectedLayers.should.have.property('data').with.lengthOf(1);
+
+        const deletedLayers = deleteResponse.body.deletedLayers.data;
+        let layerIds = deletedLayers.map((layer) => layer.id);
+        layerIds.should.contain(layerOne._id);
+        layerIds.should.contain(layerTwo._id);
+
+        const protectedLayers = deleteResponse.body.protectedLayers.data;
+        layerIds = protectedLayers.map((layer) => layer.id);
+        layerIds.should.contain(layerThree._id);
+
+        const findLayerByUser = await Layer.find({ userId: { $eq: USERS.USER.id } }).exec();
+        findLayerByUser.should.be.an('array').with.lengthOf(1);
+        layerIds = findLayerByUser.map((layer) => layer._id);
+        layerIds.should.contain(layerThree._id);
+
+        const findAllLayers = await Layer.find({}).exec();
+        findAllLayers.should.be.an('array').with.lengthOf(3);
+
+        layerIds = findAllLayers.map((layer) => layer._id);
+        layerIds.should.contain(fakeLayerFromAdmin._id);
+        layerIds.should.contain(fakeLayerFromManager._id);
+        layerIds.should.contain(layerThree._id);
     });
 
     afterEach(async () => {
