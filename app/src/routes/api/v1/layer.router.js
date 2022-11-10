@@ -159,8 +159,14 @@ class LayerRouter {
 
         logger.info(`[LayerRouter] Deleting all layer for user with id: ${userIdToDelete}`);
         try {
-            const deletedLayers = await LayerService.deleteByUserId(userIdToDelete);
-            ctx.body = LayerSerializer.serialize(deletedLayers);
+            const layers = await LayerService.deleteByUserId(userIdToDelete);
+            ctx.body = {
+                deletedLayers: LayerSerializer.serialize(layers.deletedLayers)
+            };
+
+            if (layers.protectedLayers) {
+                ctx.body.protectedLayers = LayerSerializer.serialize(layers.protectedLayers);
+            }
         } catch (err) {
             logger.error(`Error deleting layers from user ${userIdToDelete}`, err);
             ctx.throw(500, `Error deleting layers from user ${userIdToDelete}`);

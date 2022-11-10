@@ -333,9 +333,10 @@ class LayerService {
         logger.debug(`[LayerService]: Delete layers for user with id:  ${userId}`);
 
         const userLayers = await LayerService.getAll({ userId, env: 'all' });
-        if (userLayers.docs) {
+        const protectedLayers = { docs: userLayers.docs.filter((layer) => layer.protected) };
 
-            await Promise.all(userLayers.docs.map(async (layer) => {
+        if (userLayers.docs) {
+            userLayers.docs = await Promise.all(userLayers.docs.filter((layer) => !layer.protected).map(async (layer) => {
                 const currentLayerId = layer._id;
                 const currentLayerDatasetId = layer.dataset;
                 logger.info(`[DBACCESS-DELETE]: layer.id: ${currentLayerId}`);
@@ -356,9 +357,13 @@ class LayerService {
                 } catch (err) {
                     logger.error('Error expiring cache', err);
                 }
+                return layer;
             }));
         }
-        return userLayers;
+        return {
+            deletedLayers: userLayers,
+            protectedLayers: protectedLayers.docs.length > 0 ? protectedLayers : null
+        };
     }
 
     static async expireCacheTiles(layerId) {
