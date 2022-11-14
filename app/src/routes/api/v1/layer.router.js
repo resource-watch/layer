@@ -113,7 +113,8 @@ class LayerRouter {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Deleting layer with id: ${id}`);
         try {
-            const layer = await LayerService.delete(id);
+            const layer = await LayerService.get(id);
+            await LayerService.delete(layer);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
             ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
@@ -161,11 +162,11 @@ class LayerRouter {
         try {
             const layers = await LayerService.deleteByUserId(userIdToDelete);
             ctx.body = {
-                deletedLayers: LayerSerializer.serialize(layers.deletedLayers)
+                deletedLayers: LayerSerializer.serialize(layers.deletedLayers, null, true).data
             };
 
             if (layers.protectedLayers) {
-                ctx.body.protectedLayers = LayerSerializer.serialize(layers.protectedLayers);
+                ctx.body.protectedLayers = LayerSerializer.serialize(layers.protectedLayers, null, true).data;
             }
         } catch (err) {
             logger.error(`Error deleting layers from user ${userIdToDelete}`, err);

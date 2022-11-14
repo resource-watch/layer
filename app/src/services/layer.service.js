@@ -257,36 +257,33 @@ class LayerService {
         return layers;
     }
 
-    static async delete(id) {
-        logger.info(`[LayerService - delete]: Getting layer with id: ${id}`);
-        const currentLayer = await Layer.findById(id).exec() || await Layer.findOne({
-            slug: id
-        }).exec();
-        if (!currentLayer) {
-            logger.error(`[LayerService]: Layer with id ${id} doesn't exist`);
-            throw new LayerNotFound(`Layer with id '${id}' doesn't exist`);
+    static async delete(layer) {
+        logger.info(`[LayerService - delete]: Getting layer with id: ${layer.id}`);
+        if (!layer) {
+            logger.error(`[LayerService]: Layer with id ${layer.id} doesn't exist`);
+            throw new LayerNotFound(`Layer with id '${layer.id}' doesn't exist`);
         }
-        if (currentLayer.protected) {
-            logger.error(`[LayerService]: Layer with id ${id} is protected`);
+        if (layer.protected) {
+            logger.error(`[LayerService]: Layer with id ${layer.id} is protected`);
             throw new LayerProtected(`Layer is protected`);
         }
-        logger.info(`[DBACCESS-DELETE]: layer.id: ${id}`);
-        const deletedLayer = await currentLayer.remove();
+        logger.info(`[DBACCESS-DELETE]: layer.id: ${layer.id}`);
+        const deletedLayer = await layer.remove();
         logger.debug('[LayerService]: Deleting in graph');
         if (stage !== 'staging') {
             try {
-                await GraphService.deleteLayer(id);
+                await GraphService.deleteLayer(layer.id);
             } catch (err) {
                 logger.error('Error removing layer of the graph', err);
             }
         }
         try {
-            await LayerService.expireCacheTiles(id, currentLayer._id);
+            await LayerService.expireCacheTiles(layer.id, layer._id);
         } catch (err) {
             logger.error('Error expiring cache', err);
         }
         try {
-            await LayerService.deleteMetadata(id, currentLayer._id);
+            await LayerService.deleteMetadata(layer.id, layer._id);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
@@ -332,37 +329,16 @@ class LayerService {
     static async deleteByUserId(userId) {
         logger.debug(`[LayerService]: Delete layers for user with id:  ${userId}`);
 
-        const userLayers = await LayerService.getAll({ userId, env: 'all' });
-        const protectedLayers = { docs: userLayers.docs.filter((layer) => layer.protected) };
+        const filteredQuery = LayerService.getFilteredQuery({ userId, env: 'all' });
 
-        if (userLayers.docs) {
-            userLayers.docs = await Promise.all(userLayers.docs.filter((layer) => !layer.protected).map(async (layer) => {
-                const currentLayerId = layer._id;
-                const currentLayerDatasetId = layer.dataset;
-                logger.info(`[DBACCESS-DELETE]: layer.id: ${currentLayerId}`);
-                await layer.remove();
-                logger.debug('[LayerService]: Deleting in graph');
-                try {
-                    await GraphService.deleteLayer(currentLayerId);
-                } catch (err) {
-                    logger.error('Error removing layer of the graph', err);
-                }
-                try {
-                    await LayerService.deleteMetadata(currentLayerDatasetId, currentLayerId);
-                } catch (err) {
-                    logger.error('Error removing metadata of the layer', err);
-                }
-                try {
-                    await LayerService.expireCacheTiles(currentLayerId);
-                } catch (err) {
-                    logger.error('Error expiring cache', err);
-                }
-                return layer;
-            }));
-        }
+        const unprotectedLayers = await Layer.find({ ...filteredQuery, protected: false }).exec();
+        const protectedLayers = await Layer.find({ ...filteredQuery, protected: true }).exec();
+
+        await Promise.all(unprotectedLayers.map(LayerService.delete));
+
         return {
-            deletedLayers: userLayers,
-            protectedLayers: protectedLayers.docs.length > 0 ? protectedLayers : null
+            deletedLayers: unprotectedLayers,
+            protectedLayers
         };
     }
 
