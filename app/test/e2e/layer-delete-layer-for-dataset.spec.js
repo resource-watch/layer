@@ -76,7 +76,7 @@ describe('Delete all layers for a dataset', async () => {
         ensureCorrectError(response.body, 'Forbidden');
     });
 
-    it('Deleting all layers for a dataset be successful', async () => {
+    it('Deleting all layers for a dataset should be successful', async () => {
         mockGetUserFromToken(USERS.MICROSERVICE);
 
         createMockDataset('123');
@@ -109,6 +109,56 @@ describe('Delete all layers for a dataset', async () => {
 
         const datasetLayers = await requester
             .delete(`/api/v1/dataset/123/layer`)
+            .set('Authorization', `Bearer abcd`)
+            .send();
+
+        datasetLayers.status.should.equal(200);
+
+        const layers = await Layer.find({});
+        expect(layers).to.be.length(0);
+    });
+
+    it('Deleting protected layers for a dataset should be...', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
+
+        createMockDataset('123');
+        const layer = await new Layer(createLayer({ application: ['rw'], dataset: '123' })).save();
+        const protectedLayer = await new Layer(createLayer({ application: ['rw'], dataset: '123', protected: true })).save();
+
+        nock(process.env.GATEWAY_URL)
+            .delete(`/v1/graph/layer/${layer.dataset}`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.GATEWAY_URL)
+            .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.GATEWAY_URL)
+            .delete(`/v1/dataset/${layer.dataset}/layer/${protectedLayer._id}/metadata`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        nock(process.env.GATEWAY_URL)
+            .delete(`/v1/layer/${layer.dataset}/expire-cache`)
+            .once()
+            .reply(200, {
+                status: 200,
+                data: []
+            });
+
+        const datasetLayers = await requester
+            .delete(`/api/v1/dataset/${layer.dataset}/layer`)
             .set('Authorization', `Bearer abcd`)
             .send();
 
