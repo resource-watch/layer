@@ -82,8 +82,8 @@ async function init() {
                 }
             });
 
-            app.use(koaLogger());
             app.use(koaSimpleHealthCheck());
+            app.use(koaLogger());
 
             app.use(RWAPIMicroservice.bootstrap({
                 logger,
