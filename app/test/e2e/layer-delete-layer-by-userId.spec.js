@@ -44,6 +44,15 @@ describe('Delete all layers for a user', async () => {
 
     it('Deleting all layers of an user while being authenticated as ADMIN should return a 200 and all layers deleted', async () => {
         mockGetUserFromToken(USERS.ADMIN);
+
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/${USERS.USER.id}`)
+            .reply(200, {
+                data: {
+                    ...USERS.USER,
+                }
+            });
+
         const layerOne = await new Layer(createLayer({
             env: 'staging', application: ['rw'], dataset: '123', userId: USERS.USER.id
         })).save();
@@ -92,6 +101,14 @@ describe('Delete all layers for a user', async () => {
             env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
         })).save();
 
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/${USERS.USER.id}`)
+            .reply(200, {
+                data: {
+                    ...USERS.USER,
+                }
+            });
+
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
@@ -112,6 +129,30 @@ describe('Delete all layers for a user', async () => {
         layerNames.should.contain(fakeLayerFromAdmin.name);
     });
 
+    it('Deleting a layer owned by a user that does not exist as a MICROSERVICE should return a 404', async () => {
+        mockGetUserFromToken(USERS.MICROSERVICE);
+
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/potato`)
+            .reply(403, {
+                errors: [
+                    {
+                        status: 403,
+                        detail: 'Not authorized'
+                    }
+                ]
+            });
+
+        const deleteResponse = await requester
+            .delete(`/api/v1/layer/by-user/potato`)
+            .set('Authorization', `Bearer abcd`)
+            .send();
+
+        deleteResponse.status.should.equal(404);
+        deleteResponse.body.should.have.property('errors').and.be.an('array');
+        deleteResponse.body.errors[0].should.have.property('detail').and.equal(`User potato does not exist`);
+    });
+
     it('Deleting all layers of an user while being authenticated as that same user should return a 200 and all layers deleted', async () => {
         mockGetUserFromToken(USERS.USER);
         const layerOne = await new Layer(createLayer({
@@ -126,6 +167,14 @@ describe('Delete all layers for a user', async () => {
         const fakeLayerFromManager = await new Layer(createLayer({
             env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
         })).save();
+
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/${USERS.USER.id}`)
+            .reply(200, {
+                data: {
+                    ...USERS.USER,
+                }
+            });
 
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
@@ -149,6 +198,14 @@ describe('Delete all layers for a user', async () => {
 
     it('Deleting all layers of an user while being authenticated as USER should return a 200 and all layers deleted - no layers in the db', async () => {
         mockGetUserFromToken(USERS.USER);
+
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/${USERS.USER.id}`)
+            .reply(200, {
+                data: {
+                    ...USERS.USER,
+                }
+            });
 
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
@@ -179,6 +236,14 @@ describe('Delete all layers for a user', async () => {
                 env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
             })).save();
         }));
+
+        nock(process.env.GATEWAY_URL)
+            .get(`/auth/user/${USERS.USER.id}`)
+            .reply(200, {
+                data: {
+                    ...USERS.USER,
+                }
+            });
 
         const deleteResponse = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
