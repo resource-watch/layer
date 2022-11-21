@@ -12,6 +12,7 @@ const LayerNotFound = require('errors/layerNotFound.error');
 const LayerProtected = require('errors/layerProtected.error');
 const LayerNotValid = require('errors/layerNotValid.error');
 const { USER_ROLES } = require('app.constants');
+const UserService = require('../../../services/user.service');
 
 const router = new Router({});
 
@@ -157,6 +158,12 @@ class LayerRouter {
 
     static async deleteByUserId(ctx) {
         const userIdToDelete = ctx.params.userId;
+
+        try {
+            await UserService.getUserById(userIdToDelete);
+        } catch (error) {
+            ctx.throw(404, `User ${userIdToDelete} does not exist`);
+        }
 
         logger.info(`[LayerRouter] Deleting all layer for user with id: ${userIdToDelete}`);
         try {
