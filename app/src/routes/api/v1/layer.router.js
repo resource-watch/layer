@@ -338,7 +338,7 @@ class LayerRouter {
 }
 
 const validationMiddleware = async (ctx, next) => {
-    logger.info(`[LayerRouter] Validating`);
+    logger.debug(`[LayerRouter] Validating`);
     if (ctx.request.body.layer) {
         ctx.request.body = Object.assign(ctx.request.body, ctx.request.body.layer);
         delete ctx.request.body.layer;
@@ -361,7 +361,7 @@ const validationMiddleware = async (ctx, next) => {
 };
 
 const datasetValidationMiddleware = async (ctx, next) => {
-    logger.info(`[LayerRouter] Validating dataset presence`);
+    logger.debug(`[LayerRouter] Validating dataset presence`);
 
     // supports the deprecated "layer" root object on the request
     if (ctx.request.body && ctx.request.body.layer) {
@@ -378,7 +378,7 @@ const datasetValidationMiddleware = async (ctx, next) => {
 };
 
 const findByIdValidationMiddleware = async (ctx, next) => {
-    logger.info(`[LayerRouter] Validating find by id`);
+    logger.debug(`[LayerRouter] Validating find by id`);
     try {
         await LayerValidator.validateFindById(ctx);
     } catch (err) {
@@ -421,7 +421,7 @@ const isMicroserviceOrAdmin = async (ctx, next) => {
 };
 
 const authorizationMiddleware = async (ctx, next) => {
-    logger.info(`[LayerRouter] Checking authorization`);
+    logger.debug(`[LayerRouter] Checking authorization`);
     // Get user from query (delete) or body (post-patch)
     const newLayerCreation = ctx.request.method === 'POST';
     const user = LayerRouter.getUser(ctx);
@@ -459,7 +459,7 @@ const authorizationMiddleware = async (ctx, next) => {
 };
 
 const isAuthenticatedMiddleware = async (ctx, next) => {
-    logger.info(`Verifying if user is authenticated`);
+    logger.debug(`Verifying if user is authenticated`);
     const { query, body } = ctx.request;
 
     const user = { ...(query.loggedUser ? JSON.parse(query.loggedUser) : {}), ...body.loggedUser };
@@ -472,7 +472,7 @@ const isAuthenticatedMiddleware = async (ctx, next) => {
 };
 
 const deleteResourceAuthorizationMiddleware = async (ctx, next) => {
-    logger.info(`[LayerRouter] Checking authorization`);
+    logger.debug(`[LayerRouter] Checking authorization`);
     const user = LayerRouter.getUser(ctx);
     const userFromParam = ctx.params.userId;
 
