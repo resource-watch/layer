@@ -1,4 +1,4 @@
-dist: focal
+dist: bionic
 language: node_js
 services:
   - mongodb
@@ -12,7 +12,7 @@ env:
     - CC_TEST_REPORTER_ID=23603d88c64498174b79be393dfddca69ea924896186228577ca941fd6db7352
     - NODE_ENV=test
     - PORT=5037
-    - GATEWAY_URL=http://gateway:9000
+    - GATEWAY_URL=http://127.0.0.1:9000
     - MONGO_PORT_27017_TCP_ADDR=127.0.0.1
     - MICROSERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsImNyZWF0ZWRBdCI6IjIwMTYtMDktMTQifQ.IRCIRm1nfIQTfda_Wb6Pg-341zhV8soAgzw7dd5HxxQ
     - FASTLY_ENABLED=false
