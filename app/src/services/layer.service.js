@@ -331,7 +331,7 @@ class LayerService {
 
         const filteredQuery = LayerService.getFilteredQuery({ userId, env: 'all' });
 
-        const unprotectedLayers = await Layer.find({ ...filteredQuery, protected: false }).exec();
+        const unprotectedLayers = await Layer.find({ ...filteredQuery, protected: { $ne: true } }).exec();
         const protectedLayers = await Layer.find({ ...filteredQuery, protected: true }).exec();
 
         await Promise.all(unprotectedLayers.map(LayerService.delete));
