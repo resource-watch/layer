@@ -1,7 +1,7 @@
 {
   "logger": {
     "name": "layer",
-    "level": "debug",
+    "level": "info",
     "toFile": false,
     "dirLogFile": null
   },
