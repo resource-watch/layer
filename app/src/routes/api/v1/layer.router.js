@@ -50,7 +50,7 @@ class LayerRouter {
         const user = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser) : null;
         delete query.loggedUser;
         try {
-            const layer = await LayerService.get(id, includes, user);
+            const layer = await LayerService.get(id, ctx.request.headers['x-api-key'], includes, user);
             ctx.body = LayerSerializer.serialize(layer);
             const cache = [id, layer.slug];
             if (includes) {
@@ -74,7 +74,7 @@ class LayerRouter {
         try {
             const { dataset } = ctx.params;
             const user = LayerRouter.getUser(ctx);
-            const layer = await LayerService.create(ctx.request.body, dataset, user);
+            const layer = await LayerService.create(ctx.request.body, dataset, user, ctx.request.headers['x-api-key']);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
 
@@ -93,7 +93,7 @@ class LayerRouter {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Updating layer with id: ${id}`);
         try {
-            const layer = await LayerService.update(id, ctx.request.body);
+            const layer = await LayerService.update(id, ctx.request.body, ctx.request.headers['x-api-key']);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
             ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
@@ -114,8 +114,8 @@ class LayerRouter {
         const id = ctx.params.layer;
         logger.info(`[LayerRouter] Deleting layer with id: ${id}`);
         try {
-            const layer = await LayerService.get(id);
-            await LayerService.delete(layer);
+            const layer = await LayerService.get(id, ctx.request.headers['x-api-key']);
+            await LayerService.delete(layer, ctx.request.headers['x-api-key']);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layer);
             ctx.set('uncache', ['layer', id, layer.slug, `${layer.dataset}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`]);
@@ -136,7 +136,7 @@ class LayerRouter {
         const id = ctx.params.dataset;
         logger.info(`[LayerRouter] Deleting layers of dataset with id: ${id}`);
         try {
-            const layers = await LayerService.deleteByDataset(id);
+            const layers = await LayerService.deleteByDataset(id, ctx.request.headers['x-api-key']);
             ctx.set('cache-control', 'flush');
             ctx.body = LayerSerializer.serialize(layers);
             const uncache = ['layer', `${ctx.state.dataset.id}-layer`, `${ctx.state.dataset.attributes.slug}-layer`, `${ctx.state.dataset.id}-layer-all`];
@@ -160,14 +160,14 @@ class LayerRouter {
         const userIdToDelete = ctx.params.userId;
 
         try {
-            await UserService.getUserById(userIdToDelete);
+            await UserService.getUserById(userIdToDelete, ctx.request.headers['x-api-key']);
         } catch (error) {
             ctx.throw(404, `User ${userIdToDelete} does not exist`);
         }
 
         logger.info(`[LayerRouter] Deleting all layer for user with id: ${userIdToDelete}`);
         try {
-            const layers = await LayerService.deleteByUserId(userIdToDelete);
+            const layers = await LayerService.deleteByUserId(userIdToDelete, ctx.request.headers['x-api-key']);
             ctx.body = {
                 deletedLayers: LayerSerializer.serialize(layers.deletedLayers, null, true).data
             };
@@ -187,14 +187,16 @@ class LayerRouter {
         logger.info(`[LayerRouter - expireCache] Expiring cache for layer with id: ${layerId}`);
 
         try {
-            const layer = await LayerService.get(layerId);
+            const layer = await LayerService.get(layerId, ctx.request.headers['x-api-key']);
             if (!['gee', 'loca', 'nexgddp'].includes(layer.provider)) {
                 ctx.throw(400, 'Layer provider does not support cache expiration');
             }
             const response = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/layer/${layer.provider}/${layerId}/expire-cache`,
                 method: 'DELETE',
-                json: true
+                headers: {
+                    'x-api-key': ctx.request.headers['x-api-key']
+                }
             });
             ctx.body = response;
             ctx.status = 200;
@@ -229,7 +231,7 @@ class LayerRouter {
 
             // Fetch info to sort again
             const ids = await LayerService.getAllLayersUserIds();
-            const users = await RelationshipsService.getUsersInfoByIds(ids);
+            const users = await RelationshipsService.getUsersInfoByIds(ids, ctx.request.headers['x-api-key']);
             await Promise.all(users.map((u) => LayerModel.updateMany(
                 { userId: u._id },
                 {
@@ -253,13 +255,13 @@ class LayerRouter {
                 return;
             }
             logger.debug('Obtaining collections', userId);
-            ctx.query.ids = await RelationshipsService.getCollections(ctx.query.collection, userId);
+            ctx.query.ids = await RelationshipsService.getCollections(ctx.query.collection, userId, ctx.request.headers['x-api-key']);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
         if (Object.keys(query).find((el) => el.indexOf('user.role') >= 0) && isAdmin) {
             logger.debug('Obtaining users with role');
-            ctx.query.usersRole = await RelationshipsService.getUsersWithRole(ctx.query['user.role']);
+            ctx.query.usersRole = await RelationshipsService.getUsersWithRole(ctx.query['user.role'], ctx.request.headers['x-api-key']);
             logger.debug('Ids from users with role', ctx.query.usersRole);
         }
         if (Object.keys(query).find((el) => el.indexOf('favourite') >= 0)) {
@@ -268,7 +270,7 @@ class LayerRouter {
                 return;
             }
             const app = ctx.query.app || ctx.query.application || 'rw';
-            ctx.query.ids = await RelationshipsService.getFavorites(app, userId);
+            ctx.query.ids = await RelationshipsService.getFavorites(app, userId, ctx.request.headers['x-api-key']);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
@@ -281,7 +283,7 @@ class LayerRouter {
         const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
         const apiVersion = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link = `${ctx.request.protocol}://${getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;
-        const layers = await LayerService.getAll(query, dataset, user);
+        const layers = await LayerService.getAll(query, dataset, user, ctx.request.headers['x-api-key']);
         ctx.body = LayerSerializer.serialize(layers, link);
 
         const includes = ctx.query.includes ? ctx.query.includes.split(',').map((elem) => elem.trim()) : [];
@@ -449,7 +451,7 @@ const authorizationMiddleware = async (ctx, next) => {
     }
     const allowedOperations = newLayerCreation;
     if ((user.role === 'MANAGER' || user.role === 'ADMIN') && !allowedOperations) {
-        const permission = await LayerService.hasPermission(ctx.params.layer, user);
+        const permission = await LayerService.hasPermission(ctx.params.layer, user, ctx.request.headers['x-api-key']);
         if (!permission) {
             ctx.throw(403, 'Forbidden');
             return;

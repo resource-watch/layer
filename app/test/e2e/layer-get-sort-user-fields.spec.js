@@ -3,7 +3,9 @@ const Layer = require('models/layer.model');
 const chai = require('chai');
 const mongoose = require('mongoose');
 const { getTestServer } = require('./utils/test-server');
-const { createLayer, mockGetUserFromToken } = require('./utils/helpers');
+const {
+    createLayer, mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken
+} = require('./utils/helpers');
 const { createMockUser } = require('./utils/mocks');
 const {
     USERS: {
@@ -49,16 +51,22 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC without authentication should return 403 Forbidden', async () => {
-        const response = await requester.get('/api/v1/layer').query({ sort: 'user.role' });
+        mockValidateRequestWithApiKey({});
+        const response = await requester
+            .get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test')
+            .query({ sort: 'user.role' });
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
         response.body.errors[0].should.have.property('detail').and.be.equal('Sorting by user name or role not authorized.');
     });
 
     it('Getting layers sorted by user.role ASC with user with role USER should return 403 Forbidden', async () => {
-        mockGetUserFromToken(USER);
-        const response = await requester.get('/api/v1/layer')
+        mockValidateRequestWithApiKeyAndUserToken({ user: USER });
+        const response = await requester
+            .get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 sort: 'user.role',
             });
@@ -68,9 +76,10 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC with user with role MANAGER should return 403 Forbidden', async () => {
-        mockGetUserFromToken(MANAGER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: MANAGER });
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 sort: 'user.role',
             });
@@ -80,22 +89,26 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by userName and name should return a list of layers ordered by name, as userName should be ignored (anon user)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer({ name: 'a' })).save();
         await new Layer(createLayer({ name: 'b' })).save();
         await new Layer(createLayer({ name: 'c' })).save();
         await new Layer(createLayer({ name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            includes: 'user',
-            sort: 'userName,name'
-        });
+        const response = await requester
+            .get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test')
+            .query({
+                includes: 'user',
+                sort: 'userName,name'
+            });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
     });
 
     it('Getting layers sorted by userName and name should return a list of layers ordered by name, as userName should be ignored (ADMIN role)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ name: 'a' })).save();
         await new Layer(createLayer({ name: 'b' })).save();
         await new Layer(createLayer({ name: 'c' })).save();
@@ -103,6 +116,7 @@ describe('Get layers sorted by user fields', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'userName,name',
@@ -113,22 +127,26 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by userRole and name should return a list of layers ordered by name, as userRole should be ignored (anon user)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer({ name: 'a' })).save();
         await new Layer(createLayer({ name: 'b' })).save();
         await new Layer(createLayer({ name: 'c' })).save();
         await new Layer(createLayer({ name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            includes: 'user',
-            sort: 'userRole,name'
-        });
+        const response = await requester
+            .get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test')
+            .query({
+                includes: 'user',
+                sort: 'userRole,name'
+            });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
     });
 
     it('Getting layers sorted by userRole and name should return a list of layers ordered by name, as userRole should be ignored (ADMIN role)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ name: 'a' })).save();
         await new Layer(createLayer({ name: 'b' })).save();
         await new Layer(createLayer({ name: 'c' })).save();
@@ -136,6 +154,7 @@ describe('Get layers sorted by user fields', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'userRole,name',
@@ -146,10 +165,11 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role ASC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'user.role',
@@ -160,10 +180,11 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.role DESC should return a list of layers ordered by the role of the user who created the layer (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: '-user.role',
@@ -174,10 +195,11 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.name ASC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'user.name',
@@ -188,10 +210,11 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Getting layers sorted by user.name DESC should return a list of layers ordered by the name of the user who created the layer (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await mockLayersForSorting();
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: '-user.name',
@@ -202,7 +225,7 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user role ASC puts layers without valid users in the end of the list', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ userId: USER.id })).save();
         await new Layer(createLayer({ userId: MANAGER.id })).save();
         await new Layer(createLayer({ userId: ADMIN.id })).save();
@@ -214,18 +237,27 @@ describe('Get layers sorted by user fields', () => {
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
 
         // Mock requests for includes=user
-        fullUsers.map((user) => nock(process.env.GATEWAY_URL)
+        fullUsers.map((user) => nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post('/auth/user/find-by-ids', { ids: [user.id] })
             .reply(200, { data: user }));
 
         // Custom mock find-by-ids call
         const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post('/auth/user/find-by-ids', { ids: userIds })
             .reply(200, { data: fullUsers });
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'user.role',
@@ -244,7 +276,7 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user role DESC puts layers without valid users in the beginning of the list', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ userId: USER.id })).save();
         await new Layer(createLayer({ userId: MANAGER.id })).save();
         await new Layer(createLayer({ userId: ADMIN.id })).save();
@@ -256,18 +288,27 @@ describe('Get layers sorted by user fields', () => {
         const fullUsers = [USER, MANAGER, ADMIN, SUPERADMIN].map((u) => ({ ...u, _id: u.id }));
 
         // Mock requests for includes=user
-        fullUsers.map((user) => nock(process.env.GATEWAY_URL)
+        fullUsers.map((user) => nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post('/auth/user/find-by-ids', { ids: [user.id] })
             .reply(200, { data: user }));
 
         // Custom mock find-by-ids call
         const userIds = [USER.id, MANAGER.id, ADMIN.id, SUPERADMIN.id, '5accc3660bb7c603ba473d0f'];
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post('/auth/user/find-by-ids', { ids: userIds })
             .reply(200, { data: fullUsers });
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: '-user.role',
@@ -285,7 +326,7 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user.name is case insensitive and returns a list of layers ordered by the name of the user who created the layer', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         const firstUser = { ...USER, name: 'Anthony' };
         const secondUser = { ...MANAGER, name: 'bernard' };
         const thirdUser = { ...ADMIN, name: 'Carlos' };
@@ -296,6 +337,7 @@ describe('Get layers sorted by user fields', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'user.name',
@@ -306,7 +348,7 @@ describe('Get layers sorted by user fields', () => {
     });
 
     it('Sorting layers by user.name is deterministic, applying an implicit sort by id after sorting by user.name', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         const spoofedUser = { ...USER, name: 'AAA' };
         const spoofedManager = { ...MANAGER, name: 'AAA' };
         const spoofedAdmin = { ...ADMIN, name: 'AAA' };
@@ -317,6 +359,7 @@ describe('Get layers sorted by user fields', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 includes: 'user',
                 sort: 'user.name',

@@ -12,7 +12,10 @@ class DatasetService {
                 const dataset = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/dataset/${datasetId}`,
                     method: 'GET',
-                    json: true
+                    json: true,
+                    headers: {
+                        'x-api-key': ctx.request.headers['x-api-key']
+                    }
                 });
                 return dataset.data;
             } catch (err) {

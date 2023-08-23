@@ -4,7 +4,8 @@ const { expect } = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const { USERS } = require('./utils/test.constants');
 const {
-    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken
+    createLayer, createMockDataset, ensureCorrectError, getUUID, mockValidateRequestWithApiKeyAndUserToken,
+    mockValidateRequestWithApiKey
 } = require('./utils/helpers');
 
 nock.disableNetConnect();
@@ -19,10 +20,11 @@ const updateEnv = async ({
     const layer = createLayer({ applications: apps, dataset, _id: layerId });
     await new Layer(layer).save();
 
-    mockGetUserFromToken(role);
+    mockValidateRequestWithApiKeyAndUserToken({ user: role });
 
     return requester
         .patch(`/api/v1/layer/change-environment/${dataset}/${env}`)
+        .set('x-api-key', 'api-key-test')
         .set('Authorization', `Bearer abcd`)
         .send({});
 };
@@ -37,21 +39,29 @@ describe('Layer env update', () => {
     });
 
     it('Updating the env of a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
-        const envLayer = await requester.patch(`/api/v1/layer/change-environment/123/test`);
+        mockValidateRequestWithApiKey({});
+        const envLayer = await requester
+            .patch(`/api/v1/layer/change-environment/123/test`)
+            .set('x-api-key', 'api-key-test');
         envLayer.status.should.equal(401);
         ensureCorrectError(envLayer.body, 'Unauthorized');
     });
 
     it('Updating the env of a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/123`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'123\' doesn\'t exist' }] });
 
         const envLayer = await requester
             .patch(`/api/v1/layer/change-environment/123/test`)
-            .set('Authorization', `Bearer abcd`);
+            .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test');
 
         envLayer.status.should.equal(404);
         ensureCorrectError(envLayer.body, 'Dataset not found');

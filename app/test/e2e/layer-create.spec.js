@@ -4,7 +4,9 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { USERS } = require('./utils/test.constants');
 const { getTestServer } = require('./utils/test-server');
-const { mockGetUserFromToken, mockWebshot } = require('./utils/helpers');
+const {
+    mockWebshot, mockValidateRequestWithApiKeyAndUserToken, mockValidateRequestWithApiKey
+} = require('./utils/helpers');
 
 chai.should();
 
@@ -26,6 +28,7 @@ describe('Layer create tests', () => {
     });
 
     it('Create a layer without being authenticated should fail (401 http code)', async () => {
+        mockValidateRequestWithApiKey({});
         const layer = {
             name: `Carto DB Layer - 123456789`,
             application: ['rw']
@@ -33,6 +36,7 @@ describe('Layer create tests', () => {
 
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 layer
             });
@@ -47,7 +51,11 @@ describe('Layer create tests', () => {
             application: ['rw']
         };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
@@ -89,7 +97,11 @@ describe('Layer create tests', () => {
                 }
             });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post(async (uri) => {
                 const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
@@ -225,11 +237,13 @@ describe('Layer create tests', () => {
                 };
             });
 
-        mockGetUserFromToken(USERS.ADMIN);
+        // mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         mockWebshot();
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 layer,
             });
@@ -255,14 +269,18 @@ describe('Layer create tests', () => {
     });
 
     it('Create a layer for a dataset (no layer root object) should be successful', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
 
         const layer = {
             name: `Carto DB Layer - 123456789`,
             application: ['rw'],
         };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/123456789`)
             .reply(200, {
                 data: {
@@ -304,7 +322,11 @@ describe('Layer create tests', () => {
                 }
             });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .post(async (uri) => {
                 const regex = `^\/v1\/graph\/layer\/123456789\/([A-Za-z0-9-]+)`;
                 const matches = uri.match(regex);
@@ -444,6 +466,7 @@ describe('Layer create tests', () => {
         const response = await requester
             .post(`/api/v1/dataset/123456789/layer`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send(layer);
 
         response.status.should.equal(200);

@@ -126,7 +126,7 @@ class LayerService {
         return filteredSort;
     }
 
-    static async get(id, includes = null, user = null) {
+    static async get(id, apiKey, includes = null, user = null) {
         logger.debug(`[LayerService - get]: Getting layer with id: ${id}`);
         const layer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
@@ -137,13 +137,13 @@ class LayerService {
         }
         if (includes && includes.length > 0) {
             logger.debug('Finding relationships');
-            const layers = await RelationshipsService.getRelationships([layer], includes, user);
+            const layers = await RelationshipsService.getRelationships([layer], includes, user, {}, apiKey);
             return layers[0];
         }
         return layer;
     }
 
-    static async create(layer, dataset, user) {
+    static async create(layer, dataset, user, apiKey) {
         logger.debug(`[LayerService - create]: Getting layer with name:  ${layer.name}`);
         const tempSlug = await LayerService.getSlug(layer.name);
 
@@ -172,7 +172,7 @@ class LayerService {
         logger.debug('[LayerService]: Creating in graph');
         if (stage !== 'staging') {
             try {
-                await GraphService.createLayer(dataset, newLayer._id);
+                await GraphService.createLayer(dataset, newLayer._id, apiKey);
             } catch (err) {
                 logger.error('Error creating widget in graph. Removing widget');
                 await newLayer.remove();
@@ -180,12 +180,12 @@ class LayerService {
             }
         }
 
-        LayerService.generateThumbnail(newLayer.id);
+        LayerService.generateThumbnail(newLayer.id, apiKey);
 
         return newLayer;
     }
 
-    static async update(id, layer) {
+    static async update(id, layer, apiKey) {
         logger.debug(`[LayerService - update]: Getting layer with id:  ${id}`);
         const currentLayer = await Layer.findById(id).exec() || await Layer.findOne({
             slug: id
@@ -218,10 +218,10 @@ class LayerService {
         logger.debug(`[DBACCESS-SAVE]: layer`);
         const newLayer = await currentLayer.save();
 
-        LayerService.generateThumbnail(newLayer.id);
+        LayerService.generateThumbnail(newLayer.id, apiKey);
 
         try {
-            await LayerService.expireCacheTiles(id, currentLayer._id);
+            await LayerService.expireCacheTiles(id, apiKey);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
@@ -229,11 +229,11 @@ class LayerService {
         return newLayer;
     }
 
-    static async generateThumbnail(id) {
+    static async generateThumbnail(id, apiKey) {
         logger.debug('[LayerService]: Creating thumbnail');
         let thumbURL = '';
         try {
-            const layerThumbnail = await ScreenshotService.takeLayerScreenshot(id);
+            const layerThumbnail = await ScreenshotService.takeLayerScreenshot(id, apiKey);
             thumbURL = layerThumbnail.data.layerThumbnail;
         } catch (err) {
             logger.error(`Error generating layer thumbnail: ${err.message}`);
@@ -257,7 +257,7 @@ class LayerService {
         return layers;
     }
 
-    static async delete(layer) {
+    static async delete(layer, apiKey) {
         logger.debug(`[LayerService - delete]: Getting layer with id: ${layer.id}`);
         if (!layer) {
             logger.error(`[LayerService]: Layer with id ${layer.id} doesn't exist`);
@@ -272,25 +272,25 @@ class LayerService {
         logger.debug('[LayerService]: Deleting in graph');
         if (stage !== 'staging') {
             try {
-                await GraphService.deleteLayer(layer.id);
+                await GraphService.deleteLayer(layer.id, apiKey);
             } catch (err) {
                 logger.error('Error removing layer of the graph', err);
             }
         }
         try {
-            await LayerService.expireCacheTiles(layer.id, layer._id);
+            await LayerService.expireCacheTiles(layer.id, apiKey);
         } catch (err) {
             logger.error('Error expiring cache', err);
         }
         try {
-            await LayerService.deleteMetadata(layer.id, layer._id);
+            await LayerService.deleteMetadata(layer.id, layer._id, apiKey);
         } catch (err) {
             logger.error('Error removing metadata of the layer', err);
         }
         return deletedLayer;
     }
 
-    static async deleteByDataset(id) {
+    static async deleteByDataset(id, apiKey) {
         logger.debug(`[LayerService - deleteByDataset]: Getting layers of dataset with id:  ${id}`);
         const layers = await Layer.find({
             dataset: id
@@ -305,19 +305,19 @@ class LayerService {
                 logger.debug('[LayerService]: Deleting in graph');
                 try {
                     // eslint-disable-next-line no-await-in-loop
-                    await GraphService.deleteLayer(id);
+                    await GraphService.deleteLayer(id, apiKey);
                 } catch (err) {
                     logger.error('Error removing layer of the graph', err);
                 }
                 try {
                     // eslint-disable-next-line no-await-in-loop
-                    await LayerService.deleteMetadata(id, currentLayer._id);
+                    await LayerService.deleteMetadata(id, currentLayer._id, apiKey);
                 } catch (err) {
                     logger.error('Error removing metadata of the layer', err);
                 }
                 try {
                     // eslint-disable-next-line no-await-in-loop
-                    await LayerService.expireCacheTiles(id, currentLayer._id);
+                    await LayerService.expireCacheTiles(id, apiKey);
                 } catch (err) {
                     logger.error('Error expiring cache', err);
                 }
@@ -326,7 +326,7 @@ class LayerService {
         return layers;
     }
 
-    static async deleteByUserId(userId) {
+    static async deleteByUserId(userId, apiKey) {
         logger.debug(`[LayerService]: Delete layers for user with id:  ${userId}`);
 
         const filteredQuery = LayerService.getFilteredQuery({ userId, env: 'all' });
@@ -334,7 +334,7 @@ class LayerService {
         const unprotectedLayers = await Layer.find({ ...filteredQuery, protected: { $ne: true } }).exec();
         const protectedLayers = await Layer.find({ ...filteredQuery, protected: true }).exec();
 
-        await Promise.all(unprotectedLayers.map(LayerService.delete));
+        await Promise.all(unprotectedLayers.map((layer) => LayerService.delete(layer, apiKey)));
 
         return {
             deletedLayers: unprotectedLayers,
@@ -342,23 +342,29 @@ class LayerService {
         };
     }
 
-    static async expireCacheTiles(layerId) {
+    static async expireCacheTiles(layerId, apiKey) {
         logger.debug('[LayerService - expireCacheTiles]: Expiring cache of tiles');
         await RWAPIMicroservice.requestToMicroservice({
             uri: `/v1/layer/${layerId}/expire-cache`,
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'x-api-key': apiKey
+            }
         });
     }
 
-    static async deleteMetadata(datasetId, layerId) {
+    static async deleteMetadata(datasetId, layerId, apiKey) {
         logger.debug('[LayerService - deleteMetadata]: Deleting layer metadata');
         await RWAPIMicroservice.requestToMicroservice({
             uri: `/v1/dataset/${datasetId}/layer/${layerId}/metadata`,
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'x-api-key': apiKey
+            }
         });
     }
 
-    static async getAll(query = {}, dataset = null, user) {
+    static async getAll(query = {}, dataset = null, user, apiKey) {
         logger.debug(`[LayerService - getAll]: Getting all layers`);
         const sort = query.sort || '';
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
@@ -380,7 +386,7 @@ class LayerService {
         pages = { ...pages };
         if (includes.length > 0) {
             logger.debug('Finding relationships');
-            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user, { ...query });
+            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, user, { ...query }, apiKey);
         }
         return pages;
     }
@@ -425,9 +431,9 @@ class LayerService {
         return userIds.filter((item, idx) => userIds.indexOf(item) === idx && item !== 'legacy');
     }
 
-    static async hasPermission(id, user) {
+    static async hasPermission(id, user, apiKey) {
         let permission = true;
-        const layer = await LayerService.get(id);
+        const layer = await LayerService.get(id, apiKey);
         const appPermission = layer.application.find((layerApp) => user.extraUserData.apps.find((app) => app === layerApp));
         if (!appPermission) {
             permission = false;

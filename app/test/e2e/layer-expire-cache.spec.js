@@ -2,7 +2,11 @@ const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
-const { ensureCorrectError, createLayer, mockGetUserFromToken } = require('./utils/helpers');
+const {
+    ensureCorrectError,
+    createLayer,
+    mockValidateRequestWithApiKeyAndUserToken, mockValidateRequestWithApiKey
+} = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
 chai.should();
@@ -16,10 +20,11 @@ const expireLayerCache = async (role) => {
     const layer = createLayer({ application: ['rw'], _id: '123' });
     await new Layer(layer).save();
 
-    mockGetUserFromToken(role);
+    mockValidateRequestWithApiKeyAndUserToken({ user: role });
 
     return requester
         .delete(`/api/v1/layer/123/expire-cache`)
+        .set('x-api-key', 'api-key-test')
         .set('Authorization', `Bearer abcd`)
         .send();
 };
@@ -34,7 +39,10 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache without being authenticated should return a 401 "Not authorized" error', async () => {
-        const datasetLayers = await requester.delete(`/api/v1/layer/123/expire-cache`);
+        mockValidateRequestWithApiKey({});
+        const datasetLayers = await requester
+            .delete(`/api/v1/layer/123/expire-cache`)
+            .set('x-api-key', 'api-key-test');
         datasetLayers.status.should.equal(401);
         ensureCorrectError(datasetLayers.body, 'Unauthorized');
     });
@@ -52,19 +60,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a GEE layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.MICROSERVICE);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MICROSERVICE });
         const layer = createLayer({ provider: 'gee' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -72,19 +85,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a LOCA layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.MICROSERVICE);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MICROSERVICE });
         const layer = createLayer({ provider: 'loca' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -92,19 +110,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as MICROSERVICE for a NEXGDDP layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.MICROSERVICE);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MICROSERVICE });
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -112,19 +135,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a GEE layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         const layer = createLayer({ provider: 'gee' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/gee/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -132,19 +160,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a LOCA layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         const layer = createLayer({ provider: 'loca' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/loca/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -152,19 +185,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a NEXGDDP layer should return a 200 and the response from the proxied MS', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(200, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -172,19 +210,24 @@ describe('Expire layer cache', async () => {
     });
 
     it('Expiring layer cache while being authenticated as ADMIN for a NEXGDDP layer should return the same response code as the proxied MS call', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         const layer = createLayer({ provider: 'nexgddp' });
         await new Layer(layer).save();
 
         const reply = { result: 'OK' };
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/nexgddp/${layer._id}/expire-cache`)
             .reply(403, reply);
 
         const response = await requester
             .delete(`/api/v1/layer/${layer._id}/expire-cache`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(403);

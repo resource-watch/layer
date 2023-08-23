@@ -85,24 +85,29 @@ async function init() {
             app.use(koaSimpleHealthCheck());
             app.use(koaLogger());
 
+            koaValidate(app);
+
             app.use(RWAPIMicroservice.bootstrap({
                 logger,
                 gatewayURL: process.env.GATEWAY_URL,
                 microserviceToken: process.env.MICROSERVICE_TOKEN,
                 fastlyEnabled: process.env.FASTLY_ENABLED,
                 fastlyServiceId: process.env.FASTLY_SERVICEID,
-                fastlyAPIKey: process.env.FASTLY_APIKEY
+                fastlyAPIKey: process.env.FASTLY_APIKEY,
+                requireAPIKey: process.env.REQUIRE_API_KEY || true,
+                awsCloudWatchLoggingEnabled: process.env.AWS_CLOUD_WATCH_LOGGING_ENABLED || true,
+                awsRegion: process.env.AWS_REGION,
+                awsCloudWatchLogStreamName: config.get('service.name'),
             }));
-
-            koaValidate(app);
 
             loader.loadRoutes(app);
 
-            const server = app.listen(process.env.PORT, () => {
-            });
+            const port = process.env.PORT || '3000';
 
-            logger.info('Server started in ', process.env.PORT);
-            resolve({ app, server });
+            const server = app.listen(port, () => {
+                logger.info('Server started in ', port);
+                resolve({ app, server });
+            });
         }
 
         logger.info(`Connecting to MongoDB URL ${mongoUri}`);

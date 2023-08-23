@@ -3,7 +3,8 @@ const chai = require('chai');
 const Layer = require('models/layer.model');
 const { getTestServer } = require('./utils/test-server');
 const {
-    ensureCorrectError, createLayer, mockGetUserFromToken
+    ensureCorrectError, createLayer, mockValidateRequestWithApiKey,
+    mockValidateRequestWithApiKeyAndUserToken
 } = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
@@ -24,18 +25,22 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting all layers of an user without being authenticated should return a 401 "Not authorized" error', async () => {
-        const response = await requester.delete(`/api/v1/layer/by-user/${USERS.USER.id}`);
+        mockValidateRequestWithApiKey({});
+        const response = await requester
+            .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
+            .set('x-api-key', 'api-key-test');
         response.status.should.equal(401);
         ensureCorrectError(response.body, 'Unauthorized');
     });
 
     it('Deleting all layers of an user while being authenticated as USER that is not the owner of layers or admin should return a 403 "Forbidden" error', async () => {
-        mockGetUserFromToken(USERS.MANAGER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MANAGER });
         await new Layer(createLayer({ application: ['rw'], dataset: '123', userId: USERS.USER.id })).save();
 
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(403);
@@ -43,9 +48,13 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting all layers of an user while being authenticated as ADMIN should return a 200 and all layers deleted', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/${USERS.USER.id}`)
             .reply(200, {
                 data: {
@@ -69,6 +78,7 @@ describe('Delete all layers for a user', async () => {
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
         response.status.should.equal(200);
         response.body.deletedLayers.map((elem) => elem.attributes.name).sort().should.eql([layerOne.name, layerTwo.name].sort());
@@ -87,7 +97,7 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting all layers of an user while being authenticated as a microservice should return a 200 and all layers deleted', async () => {
-        mockGetUserFromToken(USERS.MICROSERVICE);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MICROSERVICE });
         const layerOne = await new Layer(createLayer({
             env: 'staging', application: ['rw'], dataset: '123', userId: USERS.USER.id
         })).save();
@@ -101,7 +111,11 @@ describe('Delete all layers for a user', async () => {
             env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
         })).save();
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/${USERS.USER.id}`)
             .reply(200, {
                 data: {
@@ -112,6 +126,7 @@ describe('Delete all layers for a user', async () => {
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
         response.status.should.equal(200);
         response.body.deletedLayers.map((elem) => elem.attributes.name).sort().should.eql([layerOne.name, layerTwo.name].sort());
@@ -130,9 +145,13 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting a layer owned by a user that does not exist as a MICROSERVICE should return a 404', async () => {
-        mockGetUserFromToken(USERS.MICROSERVICE);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MICROSERVICE });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/potato`)
             .reply(403, {
                 errors: [
@@ -146,6 +165,7 @@ describe('Delete all layers for a user', async () => {
         const deleteResponse = await requester
             .delete(`/api/v1/layer/by-user/potato`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         deleteResponse.status.should.equal(404);
@@ -154,7 +174,7 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting all layers of an user while being authenticated as that same user should return a 200 and all layers deleted', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
         const layerOne = await new Layer(createLayer({
             env: 'staging', application: ['rw'], dataset: '123', userId: USERS.USER.id
         })).save();
@@ -168,7 +188,11 @@ describe('Delete all layers for a user', async () => {
             env: 'production', application: ['gfw'], dataset: '123', userId: USERS.MANAGER.id
         })).save();
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/${USERS.USER.id}`)
             .reply(200, {
                 data: {
@@ -179,6 +203,7 @@ describe('Delete all layers for a user', async () => {
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
         response.status.should.equal(200);
         response.body.deletedLayers.map((elem) => elem.attributes.name).sort().should.eql([layerOne.name, layerTwo.name].sort());
@@ -197,9 +222,13 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting all layers of an user while being authenticated as USER should return a 200 and all layers deleted - no layers in the db', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/${USERS.USER.id}`)
             .reply(200, {
                 data: {
@@ -210,6 +239,7 @@ describe('Delete all layers for a user', async () => {
         const response = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', 'Bearer abcd')
+            .set('x-api-key', 'api-key-test')
             .send();
 
         response.status.should.equal(200);
@@ -217,7 +247,7 @@ describe('Delete all layers for a user', async () => {
     });
 
     it('Deleting layers while some of them are protected should only delete unprotected ones', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         await Promise.all([...Array(100)].map(async () => {
             await new Layer(createLayer({
@@ -237,7 +267,11 @@ describe('Delete all layers for a user', async () => {
             })).save();
         }));
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/auth/user/${USERS.USER.id}`)
             .reply(200, {
                 data: {
@@ -248,6 +282,7 @@ describe('Delete all layers for a user', async () => {
         const deleteResponse = await requester
             .delete(`/api/v1/layer/by-user/${USERS.USER.id}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         deleteResponse.status.should.equal(200);

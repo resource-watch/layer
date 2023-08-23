@@ -3,33 +3,37 @@ const { RWAPIMicroservice } = require('rw-api-microservice-node');
 
 class GraphService {
 
-    static async createLayer(idDataset, id) {
+    static async createLayer(idDataset, id, apiKey) {
         logger.debug('[GraphService]: Creating dataset in graph');
         try {
             return await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/graph/layer/${idDataset}/${id}`,
                 method: 'POST',
-                json: true
+                headers: {
+                    'x-api-key': apiKey
+                }
             });
         } catch (e) {
             throw new Error(e);
         }
     }
 
-    static async deleteLayer(id) {
+    static async deleteLayer(id, apiKey) {
         logger.debug('[GraphService]: Deleting layer in graph');
         try {
             return await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/graph/layer/${id}`,
                 method: 'DELETE',
-                json: true
+                headers: {
+                    'x-api-key': apiKey
+                }
             });
         } catch (e) {
             throw new Error(e);
         }
     }
 
-    static async associateTags(id, vocabularies) {
+    static async associateTags(id, vocabularies, apiKey) {
         logger.debug('[GraphService]: Associating tags in graph');
         try {
             let tags = [];
@@ -40,9 +44,11 @@ class GraphService {
             return await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/graph/layer/${id}/associate`,
                 method: 'POST',
-                json: true,
                 body: {
                     tags
+                },
+                headers: {
+                    'x-api-key': apiKey
                 }
             });
         } catch (e) {

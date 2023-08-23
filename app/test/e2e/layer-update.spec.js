@@ -5,7 +5,8 @@ const {
     USERS, LAYER
 } = require('./utils/test.constants');
 const {
-    createLayer, createMockDataset, ensureCorrectError, getUUID, mockGetUserFromToken, mockWebshot
+    createLayer, createMockDataset, ensureCorrectError, getUUID, mockWebshot, mockValidateRequestWithApiKeyAndUserToken,
+    mockValidateRequestWithApiKey
 } = require('./utils/helpers');
 
 nock.disableNetConnect();
@@ -21,11 +22,12 @@ const updateLayer = async ({
     const layer = createLayer(apps, datasetId, layerId);
     await new Layer(layer).save();
 
-    mockGetUserFromToken(role);
+    mockValidateRequestWithApiKeyAndUserToken({ user: role });
 
     return requester
         .patch(`${datasetPrefix}/${datasetId}/layer/${layerId}`)
         .set('Authorization', `Bearer abcd`)
+        .set('x-api-key', 'api-key-test')
         .send(layerToUpdate);
 };
 
@@ -39,21 +41,29 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer without being authenticated should return a 401 "Unauthorized" error', async () => {
-        const datasetLayer = await requester.patch(`${datasetPrefix}/321/layer/123`);
+        mockValidateRequestWithApiKey({});
+        const datasetLayer = await requester
+            .patch(`${datasetPrefix}/321/layer/123`)
+            .set('x-api-key', 'api-key-test');
         datasetLayer.status.should.equal(401);
         ensureCorrectError(datasetLayer.body, 'Unauthorized');
     });
 
     it('Updating a layer should return a 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
         const datasetLayer = await requester
             .patch(`${datasetPrefix}/321/layer/123`)
-            .set('Authorization', `Bearer abcd`);
+            .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test');
 
         datasetLayer.status.should.equal(404);
         ensureCorrectError(datasetLayer.body, 'Dataset not found');
@@ -66,7 +76,7 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer should return a 404 "Layer with id X doesn\'t exist" error when the layer doesn\'t exist', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         createMockDataset('123');
         const layer = createLayer(['rw'], '123', '321');
         await new Layer(layer).save();
@@ -74,6 +84,7 @@ describe('Layer update', () => {
         const datasetLayer = await requester
             .delete(`${datasetPrefix}/123/layer/123`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -104,7 +115,7 @@ describe('Layer update', () => {
     });
 
     it('Updating a layer should update should be successful and return the updated layer (happy case)', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
         const LAYER_TO_UPDATE = {
             name: 'test update 123',
             application: ['rw'],
@@ -128,7 +139,11 @@ describe('Layer update', () => {
         const layer = createLayer({ application: ['rw'], dataset, _id: layerId });
         await new Layer(layer).save();
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/${layer._id}/expire-cache`)
             .once()
             .reply(200, {
@@ -140,6 +155,7 @@ describe('Layer update', () => {
         const datasetLayer = await requester
             .patch(`${datasetPrefix}/${dataset}/layer/${layerId}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send(LAYER_TO_UPDATE);
 
         datasetLayer.status.should.equal(200);

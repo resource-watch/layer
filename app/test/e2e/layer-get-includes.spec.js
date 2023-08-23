@@ -1,7 +1,7 @@
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { createLayer } = require('./utils/helpers');
+const { createLayer, mockValidateRequestWithApiKey } = require('./utils/helpers');
 
 const { getTestServer } = require('./utils/test-server');
 const { createMockVocabulary } = require('./utils/mocks');
@@ -23,6 +23,7 @@ describe('Get layers with includes tests', () => {
     });
 
     it('Get layers with includes vocabulary should return layer with associated vocabulary data (happy case)', async () => {
+        mockValidateRequestWithApiKey({});
         const fakeLayerOne = await new Layer(createLayer()).save();
 
         const vocabularyResponse = [
@@ -42,13 +43,19 @@ describe('Get layers with includes tests', () => {
             }
         ];
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/${fakeLayerOne.dataset}/layer/${fakeLayerOne._id}/vocabulary`)
             .reply(200, {
                 data: vocabularyResponse
             });
 
-        const response = await requester.get(`/api/v1/layer?includes=vocabulary`);
+        const response = await requester
+            .get(`/api/v1/layer?includes=vocabulary`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(200);
         response.body.should.have.property('data').with.lengthOf(1);
@@ -59,6 +66,7 @@ describe('Get layers with includes tests', () => {
     });
 
     it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env (includes not filtered)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer()).save();
         const fakeLayerOne = await new Layer(createLayer({ env: 'custom' })).save();
 
@@ -82,10 +90,13 @@ describe('Get layers with includes tests', () => {
 
         createMockVocabulary(vocabularyResponse, fakeLayerOne.dataset, fakeLayerOne._id);
 
-        const response = await requester.get(`/api/v1/layer`).query({
-            includes: 'vocabulary',
-            env: 'custom'
-        });
+        const response = await requester
+            .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
+            .query({
+                includes: 'vocabulary',
+                env: 'custom'
+            });
 
         response.status.should.equal(200);
         response.body.should.have.property('data').with.lengthOf(1);
@@ -96,6 +107,7 @@ describe('Get layers with includes tests', () => {
     });
 
     it('Get layers with includes vocabulary should return layer with associated vocabulary data and filter by env (includes filtered)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer()).save();
         const fakeLayerOne = await new Layer(createLayer({ env: 'custom' })).save();
 
@@ -119,11 +131,14 @@ describe('Get layers with includes tests', () => {
 
         createMockVocabulary(vocabularyResponse, fakeLayerOne.dataset, fakeLayerOne._id, { env: 'custom' });
 
-        const response = await requester.get(`/api/v1/layer`).query({
-            includes: 'vocabulary',
-            filterIncludesByEnv: true,
-            env: 'custom'
-        });
+        const response = await requester
+            .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
+            .query({
+                includes: 'vocabulary',
+                filterIncludesByEnv: true,
+                env: 'custom'
+            });
 
         response.status.should.equal(200);
         response.body.should.have.property('data').with.lengthOf(1);

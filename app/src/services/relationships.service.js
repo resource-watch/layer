@@ -29,7 +29,7 @@ class RelationshipsService {
         return serializeObjToQuery(query);
     }
 
-    static async getRelationships(layers, includes, user, query = {}) {
+    static async getRelationships(layers, includes, user, query = {}, apiKey) {
         logger.info(`Getting relationships of layers: ${layers}`);
         // eslint-disable-next-line no-plusplus
         for (let i = 0; i < layers.length; i++) {
@@ -44,7 +44,10 @@ class RelationshipsService {
                     const vocabularies = await RWAPIMicroservice.requestToMicroservice({
                         uri: `/v1/dataset/${layers[i].dataset}/layer/${layers[i]._id}/vocabulary${uriQuery}`,
                         method: 'GET',
-                        json: true
+                        json: true,
+                        headers: {
+                            'x-api-key': apiKey
+                        }
                     });
                     layers[i].vocabulary = vocabularies.data;
                 }
@@ -57,6 +60,9 @@ class RelationshipsService {
                         body: {
                             ids: [layers[i].userId]
                         },
+                        headers: {
+                            'x-api-key': apiKey
+                        }
                     });
 
                     if (!userData.data[0]) {
@@ -76,37 +82,45 @@ class RelationshipsService {
         return layers;
     }
 
-    static async getUsersInfoByIds(ids) {
+    static async getUsersInfoByIds(ids, apiKey) {
         logger.debug('Fetching all users\' information');
         const body = await RWAPIMicroservice.requestToMicroservice({
             uri: `/auth/user/find-by-ids`,
             method: 'POST',
             json: true,
-            body: { ids }
+            body: { ids },
+            headers: {
+                'x-api-key': apiKey
+            }
         });
 
         return body.data;
     }
 
-    static async getUsersWithRole(role) {
+    static async getUsersWithRole(role, apiKey) {
         const body = await RWAPIMicroservice.requestToMicroservice({
             uri: `/auth/user/ids/${role}`,
             method: 'GET',
             json: true,
+            headers: {
+                'x-api-key': apiKey
+            }
         });
         logger.debug('User ids', body.data);
         return body.data;
     }
 
-    static async getCollections(ids, userId) {
+    static async getCollections(ids, userId, apiKey) {
         try {
             const result = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/collection/find-by-ids`,
                 method: 'POST',
-                json: true,
                 body: {
                     ids,
                     userId
+                },
+                headers: {
+                    'x-api-key': apiKey
                 }
             });
             logger.debug(result);
@@ -116,15 +130,17 @@ class RelationshipsService {
         }
     }
 
-    static async getFavorites(app, userId) {
+    static async getFavorites(app, userId, apiKey) {
         try {
             const result = await RWAPIMicroservice.requestToMicroservice({
                 uri: `/v1/favourite/find-by-user`,
                 method: 'POST',
-                json: true,
                 body: {
                     app,
                     userId
+                },
+                headers: {
+                    'x-api-key': apiKey
                 }
             });
             logger.debug(result);

@@ -1,7 +1,7 @@
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { createLayer } = require('./utils/helpers');
+const { createLayer, mockValidateRequestWithApiKey } = require('./utils/helpers');
 
 const { getTestServer } = require('./utils/test-server');
 
@@ -12,7 +12,6 @@ let requester;
 let layerOne;
 let layerTwo;
 let layerThree;
-
 
 describe('Sort layers tests', () => {
 
@@ -31,8 +30,10 @@ describe('Sort layers tests', () => {
     });
 
     it('Sort layers by non-existent field (implicit order)', async () => {
+        mockValidateRequestWithApiKey({});
         const responseOne = await requester
             .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
             .query({ sort: 'potato' });
 
         const layersOne = responseOne.body.data;
@@ -48,8 +49,10 @@ describe('Sort layers tests', () => {
     });
 
     it('Sort layers by provider (implicit order)', async () => {
+        mockValidateRequestWithApiKey({});
         const responseOne = await requester
             .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
             .query({ sort: 'provider' });
         const layersOne = responseOne.body.data;
 
@@ -65,8 +68,10 @@ describe('Sort layers tests', () => {
     });
 
     it('Sort layers by provider (explicit asc order)', async () => {
+        mockValidateRequestWithApiKey({});
         const responseOne = await requester
             .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
             .query({ sort: '+provider' });
 
         const layersOne = responseOne.body.data;
@@ -83,8 +88,10 @@ describe('Sort layers tests', () => {
     });
 
     it('Sort layers by provider (explicit desc order)', async () => {
+        mockValidateRequestWithApiKey({});
         const responseOne = await requester
             .get(`/api/v1/layer`)
+            .set('x-api-key', 'api-key-test')
             .query({ sort: '-provider' });
 
         const layersOne = responseOne.body.data;

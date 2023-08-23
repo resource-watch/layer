@@ -3,7 +3,8 @@ const Layer = require('models/layer.model');
 const { expect } = require('chai');
 const { getTestServer } = require('./utils/test-server');
 const {
-    ensureCorrectError, createMockDataset, createLayer, mockGetUserFromToken
+    ensureCorrectError, createMockDataset, createLayer, mockValidateRequestWithApiKeyAndUserToken,
+    mockValidateRequestWithApiKey
 } = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
@@ -17,10 +18,11 @@ const deleteLayer = async (role, layerId, apps = ['rw'], providedLayer) => {
     const layer = providedLayer || createLayer({ application: apps, dataset: layerId || '123', _id: layerId });
     await new Layer(layer).save();
 
-    mockGetUserFromToken(role);
+    mockValidateRequestWithApiKeyAndUserToken({ user: role });
 
     return requester
         .delete(`/api/v1/dataset/123/layer/${layerId}`)
+        .set('x-api-key', 'api-key-test')
         .set('Authorization', `Bearer abcd`)
         .send();
 };
@@ -35,22 +37,30 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should return 404 "Dataset not found" error when the dataset doesn\'t exist', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .get(`/v1/dataset/321`)
             .reply(404, { errors: [{ status: 404, detail: 'Dataset with id \'321\' doesn\'t exist' }] });
 
         const datasetLayer = await requester
             .delete(`/api/v1/dataset/321/layer/123`)
-            .set('Authorization', `Bearer abcd`);
+            .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test');
 
         datasetLayer.status.should.equal(404);
         ensureCorrectError(datasetLayer.body, 'Dataset not found');
     });
 
     it('Deleting a single layer by id without being authenticated should return a 401 "Not authorized" error\'', async () => {
-        const datasetLayer = await requester.delete(`/api/v1/dataset/123/layer`);
+        mockValidateRequestWithApiKey({});
+        const datasetLayer = await requester
+            .delete(`/api/v1/dataset/123/layer`)
+            .set('x-api-key', 'api-key-test');
         datasetLayer.status.should.equal(401);
         ensureCorrectError(datasetLayer.body, 'Unauthorized');
     });
@@ -68,21 +78,33 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id while being authenticated as MANAGER that owns the layer should delete the specific layer in specific dataset (happy case)', async () => {
-        mockGetUserFromToken(USERS.MANAGER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.MANAGER });
 
         createMockDataset('123');
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete('/v1/graph/layer/123')
             .once()
             .reply(200, {});
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete('/v1/layer/123/expire-cache')
             .once()
             .reply(200, {});
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete('/v1/dataset/123/layer/123/metadata')
             .once()
             .reply(200, {});
@@ -95,6 +117,7 @@ describe('Delete single layer by id', async () => {
         const datasetLayer = await requester
             .delete(`/api/v1/dataset/123/layer/123`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         datasetLayer.status.should.equal(200);
@@ -116,7 +139,7 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should return 404 "Layer with id X not found" error when the layer doesn\'t exist', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
 
         createMockDataset('123');
         const layer = createLayer({ application: ['rw'], dataset: '123', _id: '321' });
@@ -125,6 +148,7 @@ describe('Delete single layer by id', async () => {
         const datasetLayer = await requester
             .delete(`/api/v1/dataset/123/layer/123`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         datasetLayer.status.should.equal(404);
@@ -132,13 +156,17 @@ describe('Delete single layer by id', async () => {
     });
 
     it('Deleting a single layer by id should delete the specific layer in specific dataset (happy case)', async () => {
-        mockGetUserFromToken(USERS.ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.ADMIN });
 
         const layer = createLayer({ application: ['rw'], dataset: '123', _id: '123' });
         createMockDataset('123');
         await new Layer(layer).save();
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/graph/layer/${layer.dataset}`)
             .once()
             .reply(200, {
@@ -146,7 +174,11 @@ describe('Delete single layer by id', async () => {
                 data: []
             });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/dataset/${layer.dataset}/layer/${layer._id}/metadata`)
             .once()
             .reply(200, {
@@ -154,7 +186,11 @@ describe('Delete single layer by id', async () => {
                 data: []
             });
 
-        nock(process.env.GATEWAY_URL)
+        nock(process.env.GATEWAY_URL, {
+            reqheaders: {
+                'x-api-key': 'api-key-test',
+            }
+        })
             .delete(`/v1/layer/${layer._id}/expire-cache`)
             .once()
             .reply(200, {
@@ -165,6 +201,7 @@ describe('Delete single layer by id', async () => {
         const datasetLayer = await requester
             .delete(`/api/v1/dataset/123/layer/123`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send();
 
         datasetLayer.status.should.equal(200);

@@ -4,7 +4,8 @@ const chai = require('chai');
 const config = require('config');
 const { getTestServer } = require('./utils/test-server');
 const {
-    createLayer, ensureCorrectLayer, mockGetUserFromToken, createVocabulary
+    createLayer, ensureCorrectLayer, createVocabulary, mockValidateRequestWithApiKey,
+    mockValidateRequestWithApiKeyAndUserToken
 } = require('./utils/helpers');
 const { createMockUser, createMockUserRole, createMockVocabulary } = require('./utils/mocks');
 const {
@@ -31,8 +32,10 @@ describe('Get layers', () => {
 
     describe('Test pagination links', () => {
         it('Get layers without referer header should be successful and use the request host', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
-                .get(`/api/v1/layer`);
+                .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.should.have.property('data').and.be.an('array');
@@ -45,8 +48,10 @@ describe('Get layers', () => {
         });
 
         it('Get layers with referer header should be successful and use that header on the links on the response', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .set('referer', `https://potato.com/get-me-all-the-data`);
 
             response.status.should.equal(200);
@@ -60,8 +65,10 @@ describe('Get layers', () => {
         });
 
         it('Get layers with x-rw-domain header should be successful and use that header on the links on the response', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .set('x-rw-domain', `potato.com`);
 
             response.status.should.equal(200);
@@ -75,9 +82,11 @@ describe('Get layers', () => {
         });
 
         it('Get layers with x-rw-domain and referer headers should be successful and use the x-rw-domain header on the links on the response', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
                 .get(`/api/v1/layer`)
                 .set('x-rw-domain', `potato.com`)
+                .set('x-api-key', 'api-key-test')
                 .set('referer', `https://tomato.com/get-me-all-the-data`);
 
             response.status.should.equal(200);
@@ -93,11 +102,13 @@ describe('Get layers', () => {
 
     describe('Environment', () => {
         it('Get layers with no query param should return only production env layers', async () => {
+            mockValidateRequestWithApiKey({});
             await new Layer(createLayer({ env: 'production' })).save();
             await new Layer(createLayer({ env: 'custom' })).save();
             await new Layer(createLayer({ env: 'potato' })).save();
             const response = await requester
-                .get(`/api/v1/layer`);
+                .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.should.have.property('data').and.be.an('array').and.length(1);
@@ -110,11 +121,13 @@ describe('Get layers', () => {
         });
 
         it('Get layers with query param all env filter should return layers from every env', async () => {
+            mockValidateRequestWithApiKey({});
             await new Layer(createLayer({ env: 'production' })).save();
             await new Layer(createLayer({ env: 'custom' })).save();
             await new Layer(createLayer({ env: 'potato' })).save();
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: 'all'
                 });
@@ -130,8 +143,10 @@ describe('Get layers', () => {
         });
 
         it('Get layers with default production env filter', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: 'production'
                 });
@@ -147,8 +162,10 @@ describe('Get layers', () => {
         });
 
         it('Get layers filtered by custom env - should return empty result', async () => {
+            mockValidateRequestWithApiKey({});
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: 'custom'
                 });
@@ -164,9 +181,11 @@ describe('Get layers', () => {
         });
 
         it('Get layers filtered by custom env - should return result', async () => {
+            mockValidateRequestWithApiKey({});
             await new Layer(createLayer({ env: 'custom' })).save();
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: 'custom'
                 });
@@ -182,10 +201,12 @@ describe('Get layers', () => {
         });
 
         it('Get layers filtered by env with several custom env in DB - should return success result', async () => {
+            mockValidateRequestWithApiKey({});
             await new Layer(createLayer({ env: 'custom' })).save();
             await new Layer(createLayer({ env: 'potato' })).save();
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: 'custom'
                 });
@@ -201,10 +222,12 @@ describe('Get layers', () => {
         });
 
         it('Get layers filtered by two env with several custom env in DB - should return success result', async () => {
+            mockValidateRequestWithApiKey({});
             await new Layer(createLayer({ env: 'custom' })).save();
             await new Layer(createLayer({ env: 'potato' })).save();
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     env: ['custom', 'potato'].join(',')
                 });
@@ -221,29 +244,38 @@ describe('Get layers', () => {
     });
 
     it('Getting layers should return result empty result when no layers exist', async () => {
-        const list = await requester.get('/api/v1/layer');
+        mockValidateRequestWithApiKey({});
+        const list = await requester
+            .get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test');
         list.status.should.equal(200);
         list.body.should.have.property('data').and.be.an('array').and.length(0);
     });
 
     it('Getting layers should return a list of layers (happy case)', async () => {
+        mockValidateRequestWithApiKey({});
         const savedLayer = await new Layer(createLayer()).save();
         const foundLayer = await Layer.findById(savedLayer._id);
 
-        const list = await requester.get('/api/v1/layer');
+        const list = await requester
+            .get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test');
         list.body.should.have.property('data').and.be.an('array').and.length.above(0);
         ensureCorrectLayer(foundLayer.toObject(), list.body.data[0]);
     });
 
     it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (anon user)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userName: 'c', name: 'c' })).save();
         await new Layer(createLayer({ userName: 'd', name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            userName: 'a'
-        });
+        const response = await requester.get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test')
+            .query({
+                userName: 'a'
+            });
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
@@ -251,7 +283,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by userName should return an unfiltered list, as userName should be ignored (ADMIN role)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ userName: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userName: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userName: 'c', name: 'c' })).save();
@@ -259,6 +291,7 @@ describe('Get layers', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 userName: 'a',
             });
@@ -268,21 +301,24 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by userRole should return an unfiltered list, as userRole should be ignored (anon user)', async () => {
+        mockValidateRequestWithApiKey({});
         await new Layer(createLayer({ userRole: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userRole: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userRole: 'c', name: 'c' })).save();
         await new Layer(createLayer({ userRole: 'd', name: 'd' })).save();
 
-        const response = await requester.get('/api/v1/layer').query({
-            userRole: 'a'
-        });
+        const response = await requester.get('/api/v1/layer')
+            .set('x-api-key', 'api-key-test')
+            .query({
+                userRole: 'a'
+            });
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(4);
         response.body.data.map((layer) => layer.attributes.name).should.be.deep.equal(['a', 'b', 'c', 'd']);
     });
 
     it('Getting layers filtered by userRole should return an unfiltered list, as userRole should be ignored (ADMIN user)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer({ userRole: 'a', name: 'a' })).save();
         await new Layer(createLayer({ userRole: 'b', name: 'b' })).save();
         await new Layer(createLayer({ userRole: 'c', name: 'c' })).save();
@@ -290,6 +326,7 @@ describe('Get layers', () => {
 
         const response = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 userRole: 'a',
             });
@@ -299,7 +336,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = ADMIN should return a list of layers created by ADMIN users (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         const savedLayer = await new Layer(createLayer({ userId: ADMIN.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: USER.id })).save();
@@ -308,6 +345,7 @@ describe('Get layers', () => {
 
         const list = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 'user.role': 'ADMIN',
             });
@@ -317,7 +355,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = MANAGER should return a list of layers created by MANAGER users (happy case)', async () => {
-        mockGetUserFromToken(SUPERADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: SUPERADMIN });
         const savedLayer = await new Layer(createLayer({ userId: MANAGER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: USER.id })).save();
@@ -326,6 +364,7 @@ describe('Get layers', () => {
 
         const list = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 'user.role': 'MANAGER',
             });
@@ -335,7 +374,7 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as ADMIN with query params user.role = USER should return a list of layers created by USER (happy case)', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
@@ -344,6 +383,7 @@ describe('Get layers', () => {
 
         const list = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 'user.role': 'USER',
             });
@@ -353,13 +393,14 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as USER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
-        mockGetUserFromToken(USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USER });
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         const list = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 'user.role': 'USER',
             });
@@ -369,13 +410,14 @@ describe('Get layers', () => {
     });
 
     it('Getting layers as MANAGER with query params user.role = USER and should return an unfiltered list of layers (happy case)', async () => {
-        mockGetUserFromToken(MANAGER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: MANAGER });
         const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
         const foundLayer = await Layer.findById(savedLayer._id);
         await new Layer(createLayer({ userId: MANAGER.id })).save();
 
         const list = await requester.get('/api/v1/layer')
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .query({
                 'user.role': 'USER',
             });
@@ -386,12 +428,14 @@ describe('Get layers', () => {
 
     describe('Includes', () => {
         it('Get layers includes vocabulary from custom env without filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary not filtered by the custom env', async () => {
+            mockValidateRequestWithApiKey({});
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const vocabulary = createVocabulary(layerOne._id);
             createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id);
 
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({ includes: 'vocabulary', env: 'custom' });
 
             response.status.should.equal(200);
@@ -412,12 +456,14 @@ describe('Get layers', () => {
         });
 
         it('Get layers includes vocabulary from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env', async () => {
+            mockValidateRequestWithApiKey({});
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const vocabulary = createVocabulary(layerOne._id);
             createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id, { env: 'custom' });
 
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({ includes: 'vocabulary', env: 'custom', filterIncludesByEnv: true });
 
             response.status.should.equal(200);
@@ -438,12 +484,14 @@ describe('Get layers', () => {
         });
 
         it('Get layers includes vocabulary and metadata from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env, but metadata is not filtered', async () => {
+            mockValidateRequestWithApiKey({});
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const vocabulary = createVocabulary(layerOne._id);
             createMockVocabulary(vocabulary, layerOne.dataset, layerOne._id, { env: 'custom' });
 
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({ includes: ['vocabulary'].join(','), env: 'custom', filterIncludesByEnv: true });
 
             response.status.should.equal(200);
@@ -464,6 +512,7 @@ describe('Get layers', () => {
         });
 
         it('Get layers includes vocabulary from custom env with filterIncludesByEnv should return layer filtered by the custom env including the associated vocabulary filtered by the custom env (multi-env)', async () => {
+            mockValidateRequestWithApiKey({});
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const layerTwo = await new Layer(createLayer({ env: 'potato' })).save();
             const vocabulary = createVocabulary(layerOne._id);
@@ -472,6 +521,7 @@ describe('Get layers', () => {
 
             const response = await requester
                 .get(`/api/v1/layer`)
+                .set('x-api-key', 'api-key-test')
                 .query({ includes: 'vocabulary', env: 'custom,potato', filterIncludesByEnv: true });
 
             response.status.should.equal(200);
@@ -494,12 +544,15 @@ describe('Get layers', () => {
         });
 
         it('Getting layers as anonymous user with includes=user should return a list of layers and no user data (happy case)', async () => {
+            mockValidateRequestWithApiKey({});
             const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
             const foundLayer = await Layer.findById(savedLayer._id);
 
             createMockUser([USER]);
 
-            const list = await requester.get('/api/v1/layer')
+            const list = await requester
+                .get('/api/v1/layer')
+                .set('x-api-key', 'api-key-test')
                 .query({
                     includes: 'user'
                 });
@@ -518,7 +571,7 @@ describe('Get layers', () => {
         });
 
         it('Getting layers with USER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-            mockGetUserFromToken(USER);
+            mockValidateRequestWithApiKeyAndUserToken({ user: USER });
             const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
             const foundLayer = await Layer.findById(savedLayer._id);
 
@@ -526,6 +579,7 @@ describe('Get layers', () => {
 
             const list = await requester.get('/api/v1/layer')
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     includes: 'user',
                 });
@@ -543,7 +597,7 @@ describe('Get layers', () => {
         });
 
         it('Getting layers with MANAGER role and includes=user should return a list of layers and user name and email (happy case)', async () => {
-            mockGetUserFromToken(MANAGER);
+            mockValidateRequestWithApiKeyAndUserToken({ user: MANAGER });
             const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
             const foundLayer = await Layer.findById(savedLayer._id);
 
@@ -551,6 +605,7 @@ describe('Get layers', () => {
 
             const list = await requester.get('/api/v1/layer')
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     includes: 'user',
                 });
@@ -568,7 +623,7 @@ describe('Get layers', () => {
         });
 
         it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role (happy case)', async () => {
-            mockGetUserFromToken(ADMIN);
+            mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
             const savedLayer = await new Layer(createLayer({ userId: USER.id })).save();
             const foundLayer = await Layer.findById(savedLayer._id);
 
@@ -576,6 +631,7 @@ describe('Get layers', () => {
 
             const list = await requester.get('/api/v1/layer')
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     includes: 'user',
                 });
@@ -594,7 +650,7 @@ describe('Get layers', () => {
         });
 
         it('Getting layers with ADMIN role and includes=user should return a list of layers and user name, email and role, even if only partial data exists', async () => {
-            mockGetUserFromToken(ADMIN);
+            mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
             const savedLayerOne = await new Layer(createLayer()).save();
             const savedLayerTwo = await new Layer(createLayer()).save();
             const savedLayerThree = await new Layer(createLayer()).save();
@@ -626,6 +682,7 @@ describe('Get layers', () => {
 
             const list = await requester.get('/api/v1/layer')
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .query({
                     includes: 'user',
                 });
@@ -683,13 +740,14 @@ describe('Get layers', () => {
     });
 
     it('Getting layers filtered by user.role should not return a query param "usersRole" in the pagination links', async () => {
-        mockGetUserFromToken(ADMIN);
+        mockValidateRequestWithApiKeyAndUserToken({ user: ADMIN });
         await new Layer(createLayer()).save();
         createMockUserRole('ADMIN', ADMIN.id);
 
         const list = await requester
             .get('/api/v1/layer?user.role=ADMIN')
-            .set('Authorization', `Bearer abcd`);
+            .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test');
 
         list.body.should.have.property('links').and.be.an('object');
         list.body.links.should.have.property('self').and.not.includes('usersRole=');

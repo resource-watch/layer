@@ -1,7 +1,9 @@
 const nock = require('nock');
 const chai = require('chai');
 const Layer = require('models/layer.model');
-const { createLayer, mockGetUserFromToken, getUUID } = require('./utils/helpers');
+const {
+    createLayer, getUUID, mockValidateRequestWithApiKeyAndUserToken, mockValidateRequestWithApiKey
+} = require('./utils/helpers');
 const { USERS } = require('./utils/test.constants');
 
 const { getTestServer } = require('./utils/test-server');
@@ -26,8 +28,10 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers without being authenticated returns a 401', async () => {
+        mockValidateRequestWithApiKey({});
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .send({});
 
         response.status.should.equal(401);
@@ -36,11 +40,12 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers without ids in body returns a 400 error', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({});
 
         response.status.should.equal(400);
@@ -49,11 +54,12 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with empty id list returns an empty list (empty db)', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: []
             });
@@ -63,11 +69,12 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layer that does not exist returns an empty list (empty db)', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: ['abcd']
             });
@@ -77,11 +84,12 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layer that does not exist returns an empty list (empty db)', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: ['abcd']
             });
@@ -91,7 +99,7 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing a layer that exists returns only the listed layer', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const layerOne = await new Layer(createLayer()).save();
         await new Layer(createLayer()).save();
@@ -99,6 +107,7 @@ describe('Find layers by IDs', () => {
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: [layerOne.dataset]
             });
@@ -124,7 +133,7 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the listed layers (multiple results)', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const layerOne = await new Layer(createLayer()).save();
         const layerTwo = await new Layer(createLayer()).save();
@@ -132,6 +141,7 @@ describe('Find layers by IDs', () => {
         const response = await requester
             .post(`/api/v1/layer/find-by-ids`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: [layerOne.dataset, layerTwo.dataset]
             });
@@ -173,7 +183,7 @@ describe('Find layers by IDs', () => {
 
     describe('Environment', () => {
         it('Find layers by dataset id with no env filter returns the existing layers not filtered by env', async () => {
-            mockGetUserFromToken(USERS.USER);
+            mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const layerTwo = await new Layer(createLayer()).save();
@@ -181,6 +191,7 @@ describe('Find layers by IDs', () => {
             const response = await requester
                 .post(`/api/v1/layer/find-by-ids`)
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .send({
                     ids: [layerOne.dataset, layerTwo.dataset],
                 });
@@ -221,7 +232,7 @@ describe('Find layers by IDs', () => {
         });
 
         it('Find layers by dataset id with single env filter returns the existing layers filtered by env (single result)', async () => {
-            mockGetUserFromToken(USERS.USER);
+            mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             const layerTwo = await new Layer(createLayer()).save();
@@ -229,6 +240,7 @@ describe('Find layers by IDs', () => {
             const response = await requester
                 .post(`/api/v1/layer/find-by-ids`)
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .send({
                     ids: [layerOne.dataset, layerTwo.dataset],
                     env: 'custom'
@@ -256,7 +268,7 @@ describe('Find layers by IDs', () => {
         });
 
         it('Find layers by dataset id with multiple env filter returns the existing layers filtered by env (multiple results)', async () => {
-            mockGetUserFromToken(USERS.USER);
+            mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
             const layerOne = await new Layer(createLayer({ env: 'custom' })).save();
             await new Layer(createLayer({ env: 'potato', dataset: layerOne.dataset })).save();
@@ -268,6 +280,7 @@ describe('Find layers by IDs', () => {
             const response = await requester
                 .post(`/api/v1/layer/find-by-ids`)
                 .set('Authorization', `Bearer abcd`)
+                .set('x-api-key', 'api-key-test')
                 .send({
                     ids: [layerOne.dataset, layerFour.dataset, getUUID()],
                     env: 'production,custom'
@@ -282,7 +295,7 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'ids\'', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const layerOne = await new Layer(createLayer()).save();
         const layerTwo = await new Layer(createLayer()).save();
@@ -290,6 +303,7 @@ describe('Find layers by IDs', () => {
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?ids=${layerTwo.dataset}`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: [layerOne.dataset]
             });
@@ -315,7 +329,7 @@ describe('Find layers by IDs', () => {
     });
 
     it('Find layers with id list containing layers that exist returns the layers requested on the body, ignoring query param \'user.role\'', async () => {
-        mockGetUserFromToken(USERS.USER);
+        mockValidateRequestWithApiKeyAndUserToken({ user: USERS.USER });
 
         const layerOne = await new Layer(createLayer()).save();
         await new Layer(createLayer()).save();
@@ -323,6 +337,7 @@ describe('Find layers by IDs', () => {
         const response = await requester
             .post(`/api/v1/layer/find-by-ids?user.role=FAKE`)
             .set('Authorization', `Bearer abcd`)
+            .set('x-api-key', 'api-key-test')
             .send({
                 ids: [layerOne.dataset]
             });
